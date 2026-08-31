@@ -498,7 +498,7 @@ export const App: React.FC = () => {
     : null;
 
   return (
-    <div className="h-[100dvh] max-h-screen w-full bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans transition-colors relative selection:bg-[var(--gold)] selection:text-black overflow-hidden">
+    <div className="app-shell h-[100dvh] max-h-screen w-full bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans transition-colors relative selection:bg-[var(--gold)] selection:text-black overflow-hidden">
       {/* Top App Bar */}
       <TopBar
         lang={lang}
