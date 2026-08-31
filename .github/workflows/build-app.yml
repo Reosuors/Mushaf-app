@@ -46,7 +46,7 @@ jobs:
         fi
         npx @capacitor/assets generate --android --iconBackgroundColor '#121212' || true
 
-    - name: Fix Top Bar & Notch Overlapping
+    - name: Force Margin Adjustment & Safe Areas
       run: |
         cat <<EOF > capacitor.config.json
         {
@@ -54,21 +54,17 @@ jobs:
           "appName": "Mushaf App",
           "webDir": "dist",
           "android": {
-            "allowMixedContent": true
-          },
-          "plugins": {
-            "StatusBar": {
-              "overlaysWebView": false,
-              "backgroundColor": "#121212"
-            }
+            "allowMixedContent": true,
+            "adjustMarginsForEdgeToEdge": "force"
           }
         }
         EOF
-        npx cap sync android
+
+        # Inject Safe Area Padding & Viewport cover fix directly into HTML
+        sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/g' dist/index.html || true
+        sed -i 's/<\/head>/<style>html,body{padding-top:env(safe-area-inset-top, 35px)!important;padding-bottom:env(safe-area-inset-bottom, 20px)!important;box-sizing:border-box;background-color:#121212;}<\/style><\/head>/g' dist/index.html || true
         
-        # Disable EdgeToEdge forced transparency in Android styles
-        sed -i 's/<item name="android:windowTranslucentStatus">true<\/item>/<item name="android:windowTranslucentStatus">false<\/item>/g' android/app/src/main/res/values/styles.xml || true
-        sed -i 's/<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">/<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">\n        <item name="android:windowFitsSystemWindows">true<\/item>/g' android/app/src/main/res/values/styles.xml || true
+        npx cap sync android
 
     - name: Fix Duplicate Kotlin Classes
       run: |
