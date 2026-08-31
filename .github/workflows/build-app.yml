@@ -16,12 +16,12 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
     - name: Install Dependencies
       run: |
         npm install
-        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/geolocation @capacitor/local-notifications
+        npm install @capacitor/core@8.5.1 @capacitor/cli@8.5.1 @capacitor/android@8.5.1 @capacitor/assets@3.0.5 @capacitor/geolocation@8.2.2 @capacitor/local-notifications@8.3.1
 
     - name: Build Web Assets
       run: npm run build
