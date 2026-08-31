@@ -59,9 +59,8 @@ jobs:
         }
         EOF
 
-        # Inject dynamic safe area top padding while maintaining screen height for bottom bar
         sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/g' dist/index.html || true
-        sed -i 's/<\/head>/<style>html,body{margin:0;padding:0;height:100%;overflow-x:hidden;background-color:#121212;} body{padding-top:env(safe-area-inset-top, 30px)!important;}<\/style><\/head>/g' dist/index.html || true
+        sed -i 's/<\/head>/<style>html,body{margin:0;padding:0;height:100%;overflow-x:hidden;background-color:#121212;} body{padding-top:env(safe-area-inset-top, 40px)!important;padding-bottom:env(safe-area-inset-bottom, 25px)!important;}<\/style><\/head>/g' dist/index.html || true
         
         npx cap sync android
 
