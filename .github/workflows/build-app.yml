@@ -46,7 +46,7 @@ jobs:
         fi
         npx @capacitor/assets generate --android --iconBackgroundColor '#121212' || true
 
-    - name: Force Margin Adjustment & Safe Areas
+    - name: Fix Header Inset & Keep Bottom Bar Visible
       run: |
         cat <<EOF > capacitor.config.json
         {
@@ -54,15 +54,14 @@ jobs:
           "appName": "Mushaf App",
           "webDir": "dist",
           "android": {
-            "allowMixedContent": true,
-            "adjustMarginsForEdgeToEdge": "force"
+            "allowMixedContent": true
           }
         }
         EOF
 
-        # Inject Safe Area Padding & Viewport cover fix directly into HTML
+        # Inject dynamic safe area top padding while maintaining screen height for bottom bar
         sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/g' dist/index.html || true
-        sed -i 's/<\/head>/<style>html,body{padding-top:env(safe-area-inset-top, 35px)!important;padding-bottom:env(safe-area-inset-bottom, 20px)!important;box-sizing:border-box;background-color:#121212;}<\/style><\/head>/g' dist/index.html || true
+        sed -i 's/<\/head>/<style>html,body{margin:0;padding:0;height:100%;overflow-x:hidden;background-color:#121212;} body{padding-top:env(safe-area-inset-top, 30px)!important;}<\/style><\/head>/g' dist/index.html || true
         
         npx cap sync android
 
