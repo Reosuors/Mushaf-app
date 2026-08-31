@@ -21,7 +21,7 @@ jobs:
     - name: Install Dependencies
       run: |
         npm install
-        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/status-bar
+        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
 
     - name: Build Web Assets
       run: npm run build
@@ -30,12 +30,31 @@ jobs:
       run: |
         npx cap init "Mushaf App" com.example.mushaf --web-dir dist || true
         npx cap add android || true
+
+    - name: Generate App Icon
+      run: |
+        npx capacitor-assets generate --android || true
+
+    - name: Disable WebView Overlay on System Bars (Fix Notch & Top Header)
+      run: |
+        cat <<EOF > capacitor.config.json
+        {
+          "appId": "com.example.mushaf",
+          "appName": "Mushaf App",
+          "webDir": "dist",
+          "plugins": {
+            "StatusBar": {
+              "overlaysWebView": false,
+              "backgroundColor": "#000000"
+            }
+          }
+        }
+        EOF
         npx cap sync android
 
-    - name: Fix UI Top & Bottom Insets
+    - name: Fix Android Fullscreen / EdgeToEdge Issue
       run: |
-        # تعديل خلفية الحواف ومنع تداخل الهيدر مع شريط الساعة أوتوماتيكياً
-        sed -i 's/<\/head>/<style>body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);background-color:#121212;}<\/style><\/head>/g' dist/index.html || true
+        sed -i 's/android:theme="@style/AppTheme.NoActionBar"/android:theme="@style\/AppTheme.NoActionBar" android:fitsSystemWindows="true"/g' android/app/src/main/AndroidManifest.xml || true
 
     - name: Fix Duplicate Kotlin Classes
       run: |
