@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { requestMicrophonePermission } from '../utils/permissions';
 import { SURAHS } from '../data/surahs';
 import { TRANSLATIONS } from '../data/translations';
 import {
@@ -166,7 +167,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
     };
   }, [currentAyahIndex, surahAyahs, testMode]);
 
-  const startListening = () => {
+  const startListening = async () => {
     if (!recognitionRef.current) {
       alert(
         isRtl
@@ -175,6 +176,17 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
       );
       return;
     }
+
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) {
+      alert(
+        isRtl
+          ? 'نحتاج إلى إذن الميكروفون لتسجيل تلاوتك. فعّل الإذن من إعدادات التطبيق ثم حاول مرة أخرى.'
+          : 'Microphone permission is required to record your recitation. Enable it in app settings and try again.'
+      );
+      return;
+    }
+
     try {
       setUserSubmission('');
       setEvaluated(false);

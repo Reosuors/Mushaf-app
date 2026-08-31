@@ -8,6 +8,7 @@ import { QiblaCompass } from './QiblaCompass';
 import { AdhanSettingsModal } from './AdhanSettingsModal';
 import { checkPrayerTimesForAdhan, loadAdhanSettings } from '../utils/prayerNotifications';
 import { Search, MapPin, Compass, ChevronDown, Clock, Loader2, Zap, Wifi, BellRing, Bell } from 'lucide-react';
+import { requestLocationPermission } from '../utils/permissions';
 
 interface PrayerSectionProps {
   lang: string;
@@ -128,6 +129,16 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
   }, []);
 
   const handleGpsSearch = async () => {
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      setErrorMsg(
+        isRtl
+          ? 'نحتاج إلى إذن الموقع لتحديد مدينتك تلقائياً. فعّل الإذن من إعدادات التطبيق ثم حاول مرة أخرى.'
+          : 'Location permission is required to detect your city. Enable it in app settings and try again.'
+      );
+      return;
+    }
+
     setGpsLoading(true);
     setErrorMsg(null);
     try {

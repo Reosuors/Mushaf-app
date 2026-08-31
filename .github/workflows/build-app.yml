@@ -21,7 +21,7 @@ jobs:
     - name: Install Dependencies
       run: |
         npm install
-        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/geolocation @capacitor/local-notifications
 
     - name: Build Web Assets
       run: npm run build
@@ -62,6 +62,22 @@ jobs:
         # Keep viewport-fit=cover but do not add body padding: the app shell and bottom nav handle safe areas themselves.
         sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">/g' dist/index.html || true
         npx cap sync android
+        # Capacitor generates the manifest during the build; declare runtime permissions explicitly.
+        python3 - <<'PY'
+        from pathlib import Path
+        manifest = Path('android/app/src/main/AndroidManifest.xml')
+        text = manifest.read_text()
+        permissions = '''    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+        '''
+        marker = '<manifest '
+        start = text.find('>', text.find(marker)) + 1
+        if 'android.permission.ACCESS_FINE_LOCATION' not in text:
+            text = text[:start] + '\\n' + permissions + text[start:]
+            manifest.write_text(text)
+        PY
 
     - name: Fix Duplicate Kotlin Classes
       run: |

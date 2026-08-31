@@ -3,9 +3,9 @@ import {
   AdhanSettings,
   loadAdhanSettings,
   saveAdhanSettings,
-  requestNotificationPermission,
   getNotificationPermissionStatus,
 } from '../utils/prayerNotifications';
+import { requestNotificationPermission as requestNativeOrWebNotificationPermission } from '../utils/permissions';
 import {
   ADHAN_SOUND_OPTIONS,
   AdhanSoundType,
@@ -85,7 +85,8 @@ export const AdhanSettingsModal: React.FC<AdhanSettingsModalProps> = ({
   };
 
   const handleRequestPermission = async () => {
-    const res = await requestNotificationPermission();
+    const granted = await requestNativeOrWebNotificationPermission();
+    const res: NotificationPermission = granted ? 'granted' : 'denied';
     setPermission(res);
     if (res === 'granted') {
       try {

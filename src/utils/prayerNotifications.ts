@@ -1,5 +1,7 @@
 import { PrayerTimings } from '../types';
 import { AdhanSoundType, playAdhanSound } from './adhanAudio';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export interface AdhanSettings {
   enabled: boolean;
@@ -150,8 +152,20 @@ export function checkPrayerTimesForAdhan(
         ? `حان وقت ${nameAr} في ${cityName} (${cleanPrayerTime}). حي على الصلاة، حي على الفلاح.`
         : `It is now time for ${nameEn} in ${cityName} (${cleanPrayerTime}).`;
 
-      // 1. Send system push/browser notification if permission is given
-      if ('Notification' in window && Notification.permission === 'granted') {
+      // 1. Send a native Android notification in APK, or a browser notification on web.
+      if (Capacitor.isNativePlatform()) {
+        void LocalNotifications.schedule({
+          notifications: [
+            {
+              id: Math.floor(Date.now() / 1000),
+              title,
+              body,
+              schedule: { at: new Date(Date.now() + 1000) },
+              extra: { prayerKey: pKey },
+            },
+          ],
+        }).catch((e) => console.warn('Native notification send failed:', e));
+      } else if ('Notification' in window && Notification.permission === 'granted') {
         try {
           new Notification(title, {
             body,
