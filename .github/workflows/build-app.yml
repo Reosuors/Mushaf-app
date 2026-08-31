@@ -26,35 +26,49 @@ jobs:
     - name: Build Web Assets
       run: npm run build
 
-    - name: Initialize & Sync Capacitor
+    - name: Initialize Capacitor
       run: |
         npx cap init "Mushaf App" com.example.mushaf --web-dir dist || true
         npx cap add android || true
 
-    - name: Generate App Icon
+    - name: Prepare Assets & Generate App Icon
       run: |
-        npx capacitor-assets generate --android || true
+        mkdir -p assets
+        mkdir -p resources
+        if [ -f "public/icon.png" ]; then
+          cp public/icon.png assets/logo.png
+          cp public/icon.png assets/icon-only.png
+          cp public/icon.png resources/icon.png
+        elif [ -f "icon.png" ]; then
+          cp icon.png assets/logo.png
+          cp icon.png assets/icon-only.png
+          cp icon.png resources/icon.png
+        fi
+        npx @capacitor/assets generate --android --iconBackgroundColor '#121212' || true
 
-    - name: Disable WebView Overlay on System Bars (Fix Notch & Top Header)
+    - name: Fix Top Bar & Notch Overlapping
       run: |
         cat <<EOF > capacitor.config.json
         {
           "appId": "com.example.mushaf",
           "appName": "Mushaf App",
           "webDir": "dist",
+          "android": {
+            "allowMixedContent": true
+          },
           "plugins": {
             "StatusBar": {
               "overlaysWebView": false,
-              "backgroundColor": "#000000"
+              "backgroundColor": "#121212"
             }
           }
         }
         EOF
         npx cap sync android
-
-    - name: Fix Android Fullscreen / EdgeToEdge Issue
-      run: |
-        sed -i 's/android:theme="@style/AppTheme.NoActionBar"/android:theme="@style\/AppTheme.NoActionBar" android:fitsSystemWindows="true"/g' android/app/src/main/AndroidManifest.xml || true
+        
+        # Disable EdgeToEdge forced transparency in Android styles
+        sed -i 's/<item name="android:windowTranslucentStatus">true<\/item>/<item name="android:windowTranslucentStatus">false<\/item>/g' android/app/src/main/res/values/styles.xml || true
+        sed -i 's/<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">/<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">\n        <item name="android:windowFitsSystemWindows">true<\/item>/g' android/app/src/main/res/values/styles.xml || true
 
     - name: Fix Duplicate Kotlin Classes
       run: |
