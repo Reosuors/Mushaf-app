@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Section } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import { Palette, Globe, ChevronDown, Check, Search, HardDrive, Wifi, WifiOff } from 'lucide-react';
 
 interface TopBarProps {
   lang: string;
+  currentSection?: Section;
+  onSelectSection?: (section: Section) => void;
   onSelectLang: (code: string) => void;
   onOpenThemeModal: () => void;
   onOpenOfflineModal?: () => void;
@@ -12,6 +15,8 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({
   lang,
+  currentSection,
+  onSelectSection,
   onSelectLang,
   onOpenThemeModal,
   onOpenOfflineModal,
@@ -25,6 +30,15 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur';
+
+  const navItems: { id: Section; label: string; icon: string }[] = [
+    { id: 'prayer', label: t.navPrayer || 'الصلاة', icon: '🕌' },
+    { id: 'quran', label: t.navQuran || 'القرآن', icon: '📖' },
+    { id: 'azkar', label: t.navAzkar || 'الأذكار', icon: '🤲' },
+    { id: 'tasbih', label: t.navTasbih || 'التسبيح', icon: '📿' },
+    { id: 'asma', label: t.navAsma || 'الأسماء', icon: '☪️' },
+    { id: 'support', label: t.navSupport || 'ادعمنا', icon: '💛' },
+  ];
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -107,6 +121,29 @@ export const TopBar: React.FC<TopBarProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Center Quick Section Switcher on medium+ screens */}
+      {onSelectSection && (
+        <div className="hidden md:flex items-center gap-1 bg-[var(--bg3)]/80 p-1 rounded-2xl border border-[var(--border2)]">
+          {navItems.map((item) => {
+            const isActive = currentSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectSection(item.id)}
+                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-sm font-extrabold'
+                    : 'text-[var(--text2)] hover:text-[var(--gold)] hover:bg-[var(--bg4)]'
+                }`}
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Right widgets */}
       <div className="flex items-center gap-1.5 sm:gap-2">

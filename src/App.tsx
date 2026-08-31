@@ -413,10 +413,16 @@ export const App: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans transition-colors relative selection:bg-[var(--gold)] selection:text-black">
+    <div className="h-[100dvh] max-h-screen w-full bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans transition-colors relative selection:bg-[var(--gold)] selection:text-black overflow-hidden">
       {/* Top App Bar */}
       <TopBar
         lang={lang}
+        currentSection={currentSection}
+        onSelectSection={(sec) => {
+          setSelectedSurahNumber(null);
+          setIsMemTestOpen(false);
+          setCurrentSection(sec);
+        }}
         onSelectLang={(code) => setLang(code)}
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
         onOpenOfflineModal={() => setIsOfflineModalOpen(true)}
@@ -427,8 +433,8 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      {/* Main Content Area - Scrollable */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative pb-6">
         {/* If Memorization Test is active */}
         {isMemTestOpen ? (
           <MemTestSection

@@ -19,7 +19,7 @@ export const DiscordFab: React.FC<DiscordFabProps> = ({ label = 'Discord' }) => 
   return (
     <div
       id="discord-fab-container"
-      className="fixed left-3.5 bottom-[calc(var(--nav-h)+14px)] z-[60] flex items-center justify-start group select-none animate-fab-pop"
+      className="fixed left-3.5 bottom-[calc(var(--nav-h)+14px)] z-[45] flex items-center justify-start group select-none animate-fab-pop pointer-events-none"
     >
       <a
         id="discord-join-link"
@@ -27,7 +27,7 @@ export const DiscordFab: React.FC<DiscordFabProps> = ({ label = 'Discord' }) => 
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleTap}
-        className={`flex items-center bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-2xl p-2.5 shadow-[0_4px_16px_rgba(88,101,242,0.4)] transition-all duration-300 overflow-hidden cursor-pointer active:scale-95 ${
+        className={`pointer-events-auto flex items-center bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-2xl p-2.5 shadow-[0_4px_16px_rgba(88,101,242,0.4)] transition-all duration-300 overflow-hidden cursor-pointer active:scale-95 ${
           isExpanded ? 'max-w-[150px] px-3.5' : 'max-w-[42px] sm:group-hover:max-w-[150px] sm:group-hover:px-3.5'
         }`}
         title="Join Discord Community"

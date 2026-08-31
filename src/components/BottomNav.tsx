@@ -27,32 +27,43 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav
       id="bottom-navigation-bar"
-      className="h-[var(--nav-h)] bg-[var(--bg)]/95 backdrop-blur-md border-t border-[var(--border2)] flex items-center justify-around shrink-0 relative z-50 transition-colors px-1"
+      role="navigation"
+      aria-label="Main Navigation"
+      className="shrink-0 h-[var(--nav-h)] bg-[var(--bg2)]/98 backdrop-blur-xl border-t border-[var(--border2)] flex items-center justify-around z-40 transition-colors px-1 sm:px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.35)] select-none pb-[env(safe-area-inset-bottom,0px)]"
     >
-      {navItems.map((item) => {
-        const isActive = currentSection === item.id;
-        return (
-          <button
-            key={item.id}
-            id={`nav-item-${item.id}`}
-            onClick={() => onSelectSection(item.id)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-0.5 cursor-pointer transition-all ${
-              isActive ? 'text-[var(--gold)] font-bold' : 'text-[var(--text3)] hover:text-[var(--text2)]'
-            } ${item.isSupport && isActive ? 'animate-heartbeat' : ''}`}
-          >
-            <span
-              className={`text-xl sm:text-2xl transition-transform duration-200 ${
-                isActive ? 'scale-115 -translate-y-0.5' : 'scale-95'
-              } ${item.isSupport ? 'drop-shadow-[0_0_8px_rgba(201,168,76,0.5)]' : ''}`}
+      <div className="w-full max-w-lg mx-auto flex items-center justify-between gap-1">
+        {navItems.map((item) => {
+          const isActive = currentSection === item.id;
+          return (
+            <button
+              key={item.id}
+              id={`nav-item-${item.id}`}
+              type="button"
+              onClick={() => onSelectSection(item.id)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer touch-manipulation relative group ${
+                isActive
+                  ? 'text-[var(--gold)] bg-[var(--gold)]/12 font-bold shadow-sm'
+                  : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)] active:scale-95'
+              }`}
             >
-              {item.icon}
-            </span>
-            <span className="text-[0.64rem] sm:text-[0.7rem] font-bold tracking-tight whitespace-nowrap leading-none">
-              {item.label}
-            </span>
-          </button>
-        );
-      })}
+              {/* Active top indicator pill */}
+              {isActive && (
+                <span className="absolute -top-1 w-6 h-1 rounded-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] shadow-[0_0_10px_var(--gold)]" />
+              )}
+              <span
+                className={`text-lg sm:text-xl transition-transform duration-200 ${
+                  isActive ? 'scale-115 -translate-y-0.5' : 'group-hover:scale-105'
+                } ${item.isSupport && isActive ? 'animate-heartbeat' : ''}`}
+              >
+                {item.icon}
+              </span>
+              <span className="text-[0.66rem] sm:text-xs font-bold tracking-tight whitespace-nowrap leading-none">
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 };
