@@ -1,0 +1,6 @@
+{
+  "name": "مصحف - Mushaf Quran & Prayer Companion",
+  "description": "Comprehensive Islamic companion featuring Holy Quran with audio recitation & tafsir, prayer times with countdown, Azkar, digital Tasbih, Asma Ul Husna, and 24 languages.",
+  "requestFramePermissions": ["geolocation", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
