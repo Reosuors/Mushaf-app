@@ -1,0 +1,53 @@
+name: Build Android App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/checkout@v3
+      with:
+        node-version: 18
+
+    - name: Install Dependencies
+      run: |
+        npm install
+        npm install @capacitor/core @capacitor/cli @capacitor/android
+
+    - name: Build Web Assets
+      run: npm run build
+
+    - name: Initialize & Sync Capacitor
+      run: |
+        npx cap init "Mushaf App" com.example.mushaf --web-dir dist
+        npx cap add android
+        npx cap sync android
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Build Debug APK & Bundle (AAB)
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+        ./gradlew bundleRelease
+
+    - name: Upload APK & AAB Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-builds
+        path: |
+          android/app/build/outputs/apk/debug/app-debug.apk
+          android/app/build/outputs/bundle/release/app-release.aab
