@@ -46,7 +46,7 @@ jobs:
         fi
         npx @capacitor/assets generate --android --iconBackgroundColor '#121212' || true
 
-    - name: Absolute Fix For Top Header & Bottom Fixed Nav
+    - name: Configure Capacitor and preserve Android safe areas
       run: |
         cat <<EOF > capacitor.config.json
         {
@@ -59,11 +59,8 @@ jobs:
         }
         EOF
 
-        sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/g' dist/index.html || true
-        
-        # رفع الصفحة كاملة من فوق 40px وتطبيق هامش 60px من تحت لرفعة الأيقونات الثابتة فوق خط الجوال
-        sed -i 's/<\/head>/<style>html,body{margin:0;padding:0;background-color:#121212;} body{padding-top:42px!important;padding-bottom:70px!important;} nav, footer, [class*="nav"], [class*="footer"], [class*="bottom"]{bottom:20px!important;}<\/style><\/head>/g' dist/index.html || true
-        
+        # Keep viewport-fit=cover but do not add body padding: the app shell and bottom nav handle safe areas themselves.
+        sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">/g' dist/index.html || true
         npx cap sync android
 
     - name: Fix Duplicate Kotlin Classes

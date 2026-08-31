@@ -29,7 +29,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id="bottom-navigation-bar"
       role="navigation"
       aria-label="Main Navigation"
-      className="shrink-0 h-[var(--nav-h)] bg-[var(--bg2)]/98 backdrop-blur-xl border-t border-[var(--border2)] flex items-center justify-around z-40 transition-colors px-1 sm:px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.35)] select-none pb-[env(safe-area-inset-bottom,0px)]"
+      className="bottom-nav shrink-0 bg-[var(--bg2)]/98 backdrop-blur-xl border-t border-[var(--border2)] flex items-center justify-around z-40 transition-colors px-1 sm:px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.35)] select-none"
     >
       <div className="w-full max-w-lg mx-auto flex items-center justify-between gap-1">
         {navItems.map((item) => {

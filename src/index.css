@@ -174,3 +174,41 @@ input[type=range]::-webkit-slider-thumb {
   background-size: 200% 100%;
   animation: goldShift 3s infinite linear;
 }
+
+/* Android WebView safe-area handling: keep the bottom navigation in the flex layout. */
+.bottom-nav {
+  --bottom-safe-area: env(safe-area-inset-bottom, 0px);
+  flex: 0 0 auto;
+  height: calc(var(--nav-h) + var(--bottom-safe-area));
+  min-height: calc(var(--nav-h) + var(--bottom-safe-area));
+  padding-bottom: var(--bottom-safe-area);
+}
+
+@supports not (height: 100dvh) {
+  .bottom-nav {
+    height: var(--nav-h);
+    min-height: var(--nav-h);
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .bottom-nav button {
+    min-height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav,
+  .bottom-nav * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Prevent Android WebView from adding browser-like body spacing. */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+}
