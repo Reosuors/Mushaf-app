@@ -21,7 +21,7 @@ jobs:
     - name: Install Dependencies
       run: |
         npm install
-        npm install @capacitor/core @capacitor/cli @capacitor/android
+        npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/status-bar
 
     - name: Build Web Assets
       run: npm run build
@@ -31,6 +31,11 @@ jobs:
         npx cap init "Mushaf App" com.example.mushaf --web-dir dist || true
         npx cap add android || true
         npx cap sync android
+
+    - name: Fix UI Top & Bottom Insets
+      run: |
+        # تعديل خلفية الحواف ومنع تداخل الهيدر مع شريط الساعة أوتوماتيكياً
+        sed -i 's/<\/head>/<style>body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);background-color:#121212;}<\/style><\/head>/g' dist/index.html || true
 
     - name: Fix Duplicate Kotlin Classes
       run: |
