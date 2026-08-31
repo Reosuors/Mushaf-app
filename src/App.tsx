@@ -3,6 +3,11 @@ import { Section, Reciter, RepeatSession, TafsirState } from './types';
 import { SURAHS } from './data/surahs';
 import { THEMES } from './data/themes';
 import { TRANSLATIONS } from './data/translations';
+import { 
+  getGlobalAyahNumber, 
+  getSurahAudioCandidates, 
+  getAyahAudioCandidates 
+} from './utils/quranAudio';
 
 // Components
 import { TopBar } from './components/TopBar';
@@ -14,6 +19,7 @@ import { RepeatModal } from './components/RepeatModal';
 import { DiscordFab } from './components/DiscordFab';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
+import { AdhanActiveBanner } from './components/AdhanActiveBanner';
 import { getDownloadedSurahNumbers } from './utils/offlineStorage';
 
 // Section Views
@@ -42,7 +48,7 @@ const DEFAULT_RECITERS: Reciter[] = [
 export const App: React.FC = () => {
   // 1. Language & Theme State
   const [lang, setLang] = useState<string>(() => localStorage.getItem('mushaf_lang') || 'ar');
-  const [currentTheme, setCurrentTheme] = useState<string>(() => localStorage.getItem('mushaf_theme') || 'classic');
+  const [currentTheme, setCurrentTheme] = useState<string>(() => localStorage.getItem('mushaf_theme') || 'dark-gold');
 
   // 2. Navigation State
   const [currentSection, setCurrentSection] = useState<Section>('quran');
@@ -58,6 +64,8 @@ export const App: React.FC = () => {
   const [reciters, setReciters] = useState<Reciter[]>(DEFAULT_RECITERS);
   const [selectedReciter, setSelectedReciter] = useState<Reciter | null>(DEFAULT_RECITERS[0]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [audioVisible, setAudioVisible] = useState(false);
   const [currentPlayingAyah, setCurrentPlayingAyah] = useState<number | null>(null);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
@@ -87,6 +95,12 @@ export const App: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const curSurahAudioPlaying = useRef<number | null>(null);
   const curAyahAudioPlaying = useRef<number | null>(null);
+  const candidatesQueueRef = useRef<string[]>([]);
+  const candidateIndexRef = useRef<number>(0);
+  const callbacksRef = useRef<{
+    onEnded?: () => void;
+    tryNextCandidate?: () => void;
+  }>({});
 
   // Sync Downloaded Surahs
   useEffect(() => {
@@ -95,6 +109,13 @@ export const App: React.FC = () => {
 
   // Sync Theme & RTL
   useEffect(() => {
+    const themeObj = THEMES.find((t) => t.id === currentTheme) || THEMES[0];
+    if (themeObj && themeObj.vars) {
+      const root = document.documentElement;
+      Object.entries(themeObj.vars).forEach(([key, val]) => {
+        root.style.setProperty(key, val);
+      });
+    }
     document.body.className = `theme-${currentTheme}`;
     localStorage.setItem('mushaf_theme', currentTheme);
   }, [currentTheme]);
@@ -115,12 +136,15 @@ export const App: React.FC = () => {
         if (data.reciters && Array.isArray(data.reciters)) {
           const formatted: Reciter[] = data.reciters
             .filter((r: any) => r.moshaf && r.moshaf.length > 0)
-            .map((r: any) => ({
-              id: r.id,
-              name: r.name,
-              server: r.moshaf[0].server,
-              moshaf: r.moshaf[0].name,
-            }));
+            .map((r: any) => {
+              const rawServer = r.moshaf[0].server || '';
+              return {
+                id: r.id,
+                name: r.name,
+                server: rawServer.endsWith('/') ? rawServer : `${rawServer}/`,
+                moshaf: r.moshaf[0].name,
+              };
+            });
           if (formatted.length > 0) {
             setReciters(formatted);
             const found = formatted.find((r) => r.id === 1 || r.name.includes('العفاسي'));
@@ -134,31 +158,30 @@ export const App: React.FC = () => {
     loadReciters();
   }, []);
 
-  // Initialize Audio element
-  useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
-
-    audio.addEventListener('timeupdate', () => {
-      setAudioCurrentTime(audio.currentTime);
-    });
-
-    audio.addEventListener('loadedmetadata', () => {
-      setAudioDuration(audio.duration);
-    });
-
-    audio.addEventListener('ended', () => {
-      handleAudioEnded();
-    });
-
-    audio.addEventListener('play', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
-
-    return () => {
-      audio.pause();
-      audio.src = '';
-    };
-  }, [repeatSession, selectedSurahNumber, currentPlayingAyah]);
+  // Set up persistent audio callbacks
+  const tryNextAudioCandidate = () => {
+    if (!audioRef.current) return;
+    const queue = candidatesQueueRef.current;
+    const nextIdx = candidateIndexRef.current + 1;
+    if (nextIdx < queue.length) {
+      candidateIndexRef.current = nextIdx;
+      const nextUrl = queue[nextIdx];
+      audioRef.current.src = nextUrl;
+      audioRef.current.playbackRate = playbackRate;
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsAudioLoading(false);
+        })
+        .catch(() => {
+          tryNextAudioCandidate();
+        });
+    } else {
+      setIsAudioLoading(false);
+      setIsPlaying(false);
+    }
+  };
 
   const handleAudioEnded = () => {
     // If in repetition session
@@ -181,11 +204,94 @@ export const App: React.FC = () => {
     }
   };
 
-  // Play full surah audio via reciter MP3 server
+  // Keep callback refs updated with latest state closures
+  useEffect(() => {
+    callbacksRef.current = {
+      onEnded: handleAudioEnded,
+      tryNextCandidate: tryNextAudioCandidate,
+    };
+  });
+
+  // Initialize single persistent Audio element (never wiped during re-renders)
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audioRef.current = audio;
+
+    const onTimeUpdate = () => setAudioCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => {
+      setAudioDuration(audio.duration);
+      setIsAudioLoading(false);
+    };
+    const onWaiting = () => setIsAudioLoading(true);
+    const onCanPlay = () => setIsAudioLoading(false);
+    const onPlaying = () => {
+      setIsPlaying(true);
+      setIsAudioLoading(false);
+    };
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      callbacksRef.current.onEnded?.();
+    };
+    const onError = () => {
+      callbacksRef.current.tryNextCandidate?.();
+    };
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('waiting', onWaiting);
+    audio.addEventListener('canplay', onCanPlay);
+    audio.addEventListener('playing', onPlaying);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('waiting', onWaiting);
+      audio.removeEventListener('canplay', onCanPlay);
+      audio.removeEventListener('playing', onPlaying);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+    };
+  }, []);
+
+  // Update playback rate when changed
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
+  // Master audio starter with automatic candidate failover
+  const playAudioWithCandidates = (candidates: string[]) => {
+    if (!audioRef.current || candidates.length === 0) return;
+    candidatesQueueRef.current = candidates;
+    candidateIndexRef.current = 0;
+    setIsAudioLoading(true);
+
+    const primaryUrl = candidates[0];
+    audioRef.current.src = primaryUrl;
+    audioRef.current.playbackRate = playbackRate;
+    audioRef.current
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+        setIsAudioLoading(false);
+      })
+      .catch(() => {
+        tryNextAudioCandidate();
+      });
+  };
+
+  // Play full surah audio via reciter candidates with failover
   const playSurahAudio = (surahNumber: number) => {
-    if (!audioRef.current || !selectedReciter) return;
-    const pad = String(surahNumber).padStart(3, '0');
-    const url = `${selectedReciter.server}${pad}.mp3`;
+    if (!audioRef.current) return;
 
     if (curSurahAudioPlaying.current === surahNumber && !audioRef.current.paused) {
       audioRef.current.pause();
@@ -197,40 +303,21 @@ export const App: React.FC = () => {
     curAyahAudioPlaying.current = null;
     setCurrentPlayingAyah(null);
 
-    audioRef.current.src = url;
-    audioRef.current.play().catch(() => {});
+    const candidates = getSurahAudioCandidates(surahNumber, selectedReciter);
+    playAudioWithCandidates(candidates);
     setAudioVisible(true);
-    setIsPlaying(true);
   };
 
-  // Play single ayah audio using AlQuran Cloud CDN
+  // Play single ayah audio using high-availability candidate CDNs
   const playAyahAudio = async (surahNumber: number, ayahNumber: number) => {
     if (!audioRef.current) return;
-    try {
-      curSurahAudioPlaying.current = surahNumber;
-      curAyahAudioPlaying.current = ayahNumber;
-      setCurrentPlayingAyah(ayahNumber);
+    curSurahAudioPlaying.current = surahNumber;
+    curAyahAudioPlaying.current = ayahNumber;
+    setCurrentPlayingAyah(ayahNumber);
 
-      const url = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${getGlobalAyahNumber(
-        surahNumber,
-        ayahNumber
-      )}.mp3`;
-
-      audioRef.current.src = url;
-      audioRef.current.play().catch(() => {});
-      setAudioVisible(true);
-      setIsPlaying(true);
-    } catch {
-      setIsPlaying(false);
-    }
-  };
-
-  const getGlobalAyahNumber = (surahN: number, ayahN: number) => {
-    let globalIndex = 0;
-    for (let i = 0; i < surahN - 1; i++) {
-      globalIndex += SURAHS[i].a;
-    }
-    return globalIndex + ayahN;
+    const candidates = getAyahAudioCandidates(surahNumber, ayahNumber);
+    playAudioWithCandidates(candidates);
+    setAudioVisible(true);
   };
 
   // Toggle Audio Play/Pause
@@ -239,7 +326,9 @@ export const App: React.FC = () => {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch(() => {
+        tryNextAudioCandidate();
+      });
     }
   };
 
@@ -278,10 +367,8 @@ export const App: React.FC = () => {
   ) => {
     if (!audioRef.current || session.stopped) return;
     try {
-      const globalN = getGlobalAyahNumber(surahN, ayahN);
-      const url = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${globalN}.mp3`;
-      audioRef.current.src = url;
-      audioRef.current.play().catch(() => {});
+      const candidates = getAyahAudioCandidates(surahN, ayahN);
+      playAudioWithCandidates(candidates);
 
       // Fetch Arabic text for the banner
       const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surahN}:${ayahN}`);
@@ -298,10 +385,8 @@ export const App: React.FC = () => {
     session: RepeatSession
   ) => {
     if (!audioRef.current || session.stopped) return;
-    const pad = String(surahN).padStart(3, '0');
-    const url = `${session.rec.server}${pad}.mp3`;
-    audioRef.current.src = url;
-    audioRef.current.play().catch(() => {});
+    const candidates = getSurahAudioCandidates(surahN, session.rec);
+    playAudioWithCandidates(candidates);
   };
 
   const handleRepeatNextStep = () => {
@@ -433,6 +518,9 @@ export const App: React.FC = () => {
         }}
       />
 
+      {/* Live Adhan Screen Banner */}
+      <AdhanActiveBanner lang={lang} />
+
       {/* Main Content Area - Scrollable */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative pb-6">
         {/* If Memorization Test is active */}
@@ -511,7 +599,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Discord Floating Action Button */}
-      <DiscordFab label="Discord" />
+      <DiscordFab label="Discord" audioVisible={audioVisible} />
 
       {/* Persistent Floating Audio Player Bar */}
       <AudioPlayerBar
@@ -523,11 +611,14 @@ export const App: React.FC = () => {
         }
         reciter={selectedReciter}
         isPlaying={isPlaying}
+        isLoading={isAudioLoading}
         currentTime={audioCurrentTime}
         duration={audioDuration}
         onTogglePlay={toggleAudioPlay}
         onSeek={handleAudioSeek}
         onSkipAyah={handleSkipAyah}
+        playbackRate={playbackRate}
+        onChangePlaybackRate={setPlaybackRate}
         onOpenTafsir={() => {
           if (selectedSurahNumber && currentPlayingAyah) {
             handleOpenTafsir(selectedSurahNumber, currentPlayingAyah, '');

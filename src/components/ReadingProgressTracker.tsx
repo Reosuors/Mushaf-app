@@ -28,12 +28,16 @@ import {
 
 interface ReadingProgressTrackerProps {
   lang: string;
-  onResumeReading: (surahNumber: number, ayahNumber: number) => void;
+  onResumeReading?: (surahNumber: number, ayahNumber: number) => void;
+  onResumeLastRead?: (surahNumber: number, ayahNumber: number) => void;
+  onSelectBookmark?: (surahNumber: number, ayahNumber: number) => void;
 }
 
 export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
   lang,
   onResumeReading,
+  onResumeLastRead,
+  onSelectBookmark,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur';
@@ -42,6 +46,16 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'bookmarks'>('overview');
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [tempGoal, setTempGoal] = useState(progress.dailyGoalAyahs || 20);
+
+  const handleNavigate = (surahNumber: number, ayahNumber: number) => {
+    if (typeof onResumeReading === 'function') {
+      onResumeReading(surahNumber, ayahNumber);
+    } else if (typeof onResumeLastRead === 'function') {
+      onResumeLastRead(surahNumber, ayahNumber);
+    } else if (typeof onSelectBookmark === 'function') {
+      onSelectBookmark(surahNumber, ayahNumber);
+    }
+  };
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -145,7 +159,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 
               <button
                 onClick={() =>
-                  onResumeReading(progress.lastRead!.surahNumber, progress.lastRead!.ayahNumber)
+                  handleNavigate(progress.lastRead!.surahNumber, progress.lastRead!.ayahNumber)
                 }
                 className="bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition-all shrink-0 cursor-pointer"
               >
@@ -274,7 +288,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
-                    onClick={() => onResumeReading(bm.surahNumber, bm.ayahNumber)}
+                    onClick={() => handleNavigate(bm.surahNumber, bm.ayahNumber)}
                     className="p-2 rounded-xl bg-[var(--gold)]/15 text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-all cursor-pointer"
                     title={isRtl ? 'انتقل إلى الآية' : 'Go to Ayah'}
                   >

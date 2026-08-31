@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SURAHS } from '../data/surahs';
 import { Reciter, AyahData } from '../types';
 import { TRANSLATIONS } from '../data/translations';
+import { normalizeArabic } from '../utils/quranSearch';
 import { 
   getSurahOffline, 
   saveSurahOffline, 
@@ -37,6 +38,7 @@ import {
   Bookmark,
   CheckSquare,
   Award,
+  ScrollText,
 } from 'lucide-react';
 
 interface SurahViewProps {
@@ -249,9 +251,12 @@ export const SurahView: React.FC<SurahViewProps> = ({
 
   const filteredAyahs = ayahs.filter((a) => {
     if (!filterQuery) return true;
+    const qNorm = normalizeArabic(filterQuery);
+    const aNorm = normalizeArabic(a.text);
     return (
+      aNorm.includes(qNorm) ||
       a.text.includes(filterQuery) ||
-      a.numberInSurah.toString() === filterQuery
+      a.numberInSurah.toString() === filterQuery.trim()
     );
   });
 
@@ -290,41 +295,45 @@ export const SurahView: React.FC<SurahViewProps> = ({
           </div>
         </div>
 
-        {/* View mode toggle & Quick download */}
+        {/* Top Quick Actions: Offline & Mode Switcher with Writing */}
         <div className="flex items-center gap-1.5">
           {!isDownloaded && (
             <button
               onClick={handleDownloadSurah}
               disabled={downloadingNow}
-              className="p-1.5 rounded-xl bg-[var(--bg3)] hover:bg-[var(--gold)]/20 border border-[var(--border2)] text-[var(--gold)] text-xs cursor-pointer transition-all active:scale-95"
+              className="p-2 rounded-xl bg-[var(--bg3)] hover:bg-[var(--gold)]/20 border border-[var(--border2)] text-[var(--gold)] text-xs cursor-pointer transition-all active:scale-95"
               title={isRtl ? 'تحميل السورة للعمل بدون إنترنت' : 'Download surah offline'}
             >
               <Download className={`w-4 h-4 ${downloadingNow ? 'animate-bounce' : ''}`} />
             </button>
           )}
 
-          <div className="flex items-center gap-1 bg-[var(--bg3)] border border-[var(--border2)] p-1 rounded-xl">
+          {/* Explicit Mode Switcher in Header */}
+          <div className="flex items-center bg-[var(--bg3)] border border-[var(--border2)] p-1 rounded-xl gap-0.5">
             <button
               onClick={() => setViewMode('verse')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'verse'
-                  ? 'bg-[var(--gold)] text-black font-bold'
+                  ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-xs'
                   : 'text-[var(--text2)] hover:text-[var(--text)]'
               }`}
-              title={t.verseByVerse || 'آية بآية'}
+              title={isRtl ? 'قراءة آية بآية مع التفسير والتشغيل' : 'Verse by Verse mode'}
             >
-              <List className="w-4 h-4" />
+              <List className="w-3.5 h-3.5" />
+              <span className="text-[0.72rem] whitespace-nowrap">{isRtl ? 'آية بآية' : 'Verses'}</span>
             </button>
+
             <button
               onClick={() => setViewMode('continuous')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'continuous'
-                  ? 'bg-[var(--gold)] text-black font-bold'
+                  ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-xs'
                   : 'text-[var(--text2)] hover:text-[var(--text)]'
               }`}
-              title={t.continuous || 'متواصل'}
+              title={isRtl ? 'المصحف الكامل: قراءة متصلة كرسم المصحف' : 'Full continuous Mushaf mode'}
             >
-              <Columns className="w-4 h-4" />
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="text-[0.72rem] whitespace-nowrap">{isRtl ? 'المصحف الكامل' : 'Full Quran'}</span>
             </button>
           </div>
         </div>
@@ -418,6 +427,116 @@ export const SurahView: React.FC<SurahViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Prominent Reading Mode Selector with Clear Labels & Descriptions */}
+      <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-2.5 sm:p-3 shadow-sm">
+        <div className="text-[0.68rem] font-bold text-[var(--text3)] mb-2 px-1 flex items-center justify-between">
+          <span>{isRtl ? 'اختر أسلوب القراءة المفضل:' : 'Choose Reading Style:'}</span>
+          <span className="text-[var(--gold)]">
+            {viewMode === 'verse'
+              ? (isRtl ? 'الوضع الحالي: آية بآية' : 'Current: Verse by Verse')
+              : (isRtl ? 'الوضع الحالي: المصحف الكامل' : 'Current: Full Mushaf')}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Option 1: Verse by Verse */}
+          <button
+            onClick={() => setViewMode('verse')}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-start ${
+              viewMode === 'verse'
+                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
+                : 'bg-[var(--bg3)] text-[var(--text)] hover:border-[var(--gold)]/40 border border-[var(--border2)]'
+            }`}
+          >
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                viewMode === 'verse' ? 'bg-black/15 text-black' : 'bg-[var(--gold)]/10 text-[var(--gold)]'
+              }`}
+            >
+              <List className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs sm:text-sm font-extrabold flex items-center justify-between">
+                <span>{isRtl ? '١. قراءة آية بآية (تفاعلي)' : '1. Verse by Verse (Interactive)'}</span>
+                {viewMode === 'verse' && (
+                  <span className="text-[0.62rem] bg-black/20 text-black px-2 py-0.5 rounded-full font-black">
+                    {isRtl ? 'مُفعّل ✓' : 'Active ✓'}
+                  </span>
+                )}
+              </div>
+              <p
+                className={`text-[0.7rem] mt-0.5 leading-tight ${
+                  viewMode === 'verse' ? 'text-black/85 font-medium' : 'text-[var(--text3)]'
+                }`}
+              >
+                {isRtl
+                  ? 'عرض تفصيلي لكل آية مع التفسير الميسر، التلاوة، والحفظ'
+                  : 'Individual verse cards with audio, tafsir and bookmarking'}
+              </p>
+            </div>
+          </button>
+
+          {/* Option 2: Full Continuous Quran */}
+          <button
+            onClick={() => setViewMode('continuous')}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-start ${
+              viewMode === 'continuous'
+                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
+                : 'bg-[var(--bg3)] text-[var(--text)] hover:border-[var(--gold)]/40 border border-[var(--border2)]'
+            }`}
+          >
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                viewMode === 'continuous' ? 'bg-black/15 text-black' : 'bg-[var(--gold)]/10 text-[var(--gold)]'
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs sm:text-sm font-extrabold flex items-center justify-between">
+                <span>{isRtl ? '٢. المصحف الكامل (متواصل)' : '2. Full Quran (Continuous)'}</span>
+                {viewMode === 'continuous' && (
+                  <span className="text-[0.62rem] bg-black/20 text-black px-2 py-0.5 rounded-full font-black">
+                    {isRtl ? 'مُفعّل ✓' : 'Active ✓'}
+                  </span>
+                )}
+              </div>
+              <p
+                className={`text-[0.7rem] mt-0.5 leading-tight ${
+                  viewMode === 'continuous' ? 'text-black/85 font-medium' : 'text-[var(--text3)]'
+                }`}
+              >
+                {isRtl
+                  ? 'قراءة متصلة كرسم المصحف الشريف لقراءة السورة كاملة والختمات'
+                  : 'Continuous traditional Mushaf page flow for smooth reading'}
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Intra-Surah Search Input when in Verse-by-verse mode */}
+      {viewMode === 'verse' && (
+        <div className="relative">
+          <Search className="w-4 h-4 text-[var(--text3)] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder={isRtl ? 'بحث في آيات هذه السورة بدون تشكيل...' : 'Filter verses in this surah without diacritics...'}
+            className="w-full bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text)] ps-10 pe-9 py-2 rounded-xl text-xs outline-none focus:border-[var(--gold)] shadow-xs"
+          />
+          {filterQuery && (
+            <button
+              onClick={() => setFilterQuery('')}
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text3)] hover:text-[var(--text)]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bismillah Header (except for Surah At-Tawbah 9) */}
       {surahNumber !== 9 && surahNumber !== 1 && (

@@ -3,6 +3,7 @@ import { SURAHS } from '../data/surahs';
 import { TRANSLATIONS } from '../data/translations';
 import { ReadingProgressTracker } from './ReadingProgressTracker';
 import { loadReadingProgress } from '../utils/readingProgress';
+import { normalizeArabic } from '../utils/quranSearch';
 import { Search, Brain, Hash, Play, Sparkles, BookOpen, HardDrive, CheckCircle2, Zap, Award, Bookmark } from 'lucide-react';
 
 interface QuranSectionProps {
@@ -53,14 +54,23 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
     if (filterMode === 'offline' && !downloadedSurahs.includes(s.n)) {
       return false;
     }
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
+    const qRaw = searchQuery.toLowerCase().trim();
+    if (!qRaw) return true;
+
+    const qNorm = normalizeArabic(qRaw);
+    const arNorm = normalizeArabic(s.ar);
+    const localizedVal = s[lang as keyof typeof s] ? String(s[lang as keyof typeof s]).toLowerCase() : '';
+    const enVal = (s.en || '').toLowerCase();
+
     const nameMatch =
-      s.ar.includes(q) ||
-      (s[lang as keyof typeof s] && String(s[lang as keyof typeof s]).toLowerCase().includes(q)) ||
-      (s.en && s.en.toLowerCase().includes(q));
-    const numberMatch不易 = s.n.toString() === q;
-    return nameMatch || numberMatch不易;
+      s.ar.includes(qRaw) ||
+      arNorm.includes(qNorm) ||
+      arNorm.includes(qRaw) ||
+      localizedVal.includes(qRaw) ||
+      enVal.includes(qRaw);
+
+    const numberMatch = s.n.toString() === qRaw || s.n.toString() === qNorm;
+    return nameMatch || numberMatch;
   });
 
   return (
@@ -161,6 +171,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
       {!searchQuery && filterMode === 'all' && (
         <ReadingProgressTracker
           lang={lang}
+          onResumeReading={(surahNumber, ayahNumber) => onSelectSurah(surahNumber, ayahNumber)}
           onSelectBookmark={(surahNumber, ayahNumber) => onSelectSurah(surahNumber, ayahNumber)}
           onResumeLastRead={(surahNumber, ayahNumber) => onSelectSurah(surahNumber, ayahNumber)}
         />

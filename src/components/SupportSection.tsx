@@ -112,20 +112,30 @@ export const SupportSection: React.FC<SupportSectionProps> = ({ lang }) => {
           </div>
         </div>
 
-        <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 flex items-center justify-center shrink-0">
-            <Users className="w-4 h-4 text-[var(--gold)]" />
+        <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4 text-[#5865F2]" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-[var(--text)]">
+                {lang === 'ar' ? 'مجتمع ديسكورد التفاعلي' : 'Discord Community'}
+              </h4>
+              <p className="text-[0.68rem] text-[var(--text3)] mt-0.5">
+                {lang === 'ar'
+                  ? 'شاركنا اقتراحاتك وكن جزءاً من عائلة مصحف.'
+                  : 'Join our Discord server to suggest features and connect.'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-xs font-bold text-[var(--text)]">
-              {lang === 'ar' ? 'مجتمع تفاعلي مفتوح' : 'Open Community'}
-            </h4>
-            <p className="text-[0.68rem] text-[var(--text3)] mt-0.5">
-              {lang === 'ar'
-                ? 'شاركنا اقتراحاتك عبر الديسكورد للمساهمة في التحسين المستمر.'
-                : 'Join our Discord server to suggest features and report feedback.'}
-            </p>
-          </div>
+          <a
+            href="https://discord.gg/VBPmVCBds"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer self-start sm:self-auto"
+          >
+            <span>{lang === 'ar' ? 'انضم للمجتمع' : 'Join Server'}</span>
+          </a>
         </div>
       </div>
 

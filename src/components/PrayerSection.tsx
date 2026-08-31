@@ -5,7 +5,9 @@ import { TRANSLATIONS } from '../data/translations';
 import { calculateOfflinePrayerTimes, CITY_COORDINATES } from '../utils/prayerCalculator';
 import { saveOfflinePrayer, getOfflinePrayer } from '../utils/offlineStorage';
 import { QiblaCompass } from './QiblaCompass';
-import { Search, MapPin, Compass, ChevronDown, Clock, Loader2, Zap, Wifi } from 'lucide-react';
+import { AdhanSettingsModal } from './AdhanSettingsModal';
+import { checkPrayerTimesForAdhan, loadAdhanSettings } from '../utils/prayerNotifications';
+import { Search, MapPin, Compass, ChevronDown, Clock, Loader2, Zap, Wifi, BellRing, Bell } from 'lucide-react';
 
 interface PrayerSectionProps {
   lang: string;
@@ -46,6 +48,8 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
   const [countdown, setCountdown] = useState<string>('');
   const [nextPrayerKey, setNextPrayerKey] = useState<string>('Fajr');
   const [isOfflineComputed, setIsOfflineComputed] = useState(false);
+  const [isAdhanModalOpen, setIsAdhanModalOpen] = useState(false);
+  const [adhanEnabled, setAdhanEnabled] = useState(() => loadAdhanSettings().enabled);
 
   const prayerKeys = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
@@ -238,9 +242,13 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
     };
 
     calculateNextPrayer();
-    const interval = setInterval(calculateNextPrayer, 30000);
+    checkPrayerTimesForAdhan(prayerData?.timings, inputCity, lang);
+    const interval = setInterval(() => {
+      calculateNextPrayer();
+      checkPrayerTimesForAdhan(prayerData?.timings, inputCity, lang);
+    }, 20000);
     return () => clearInterval(interval);
-  }, [prayerData]);
+  }, [prayerData, inputCity, lang]);
 
   return (
     <div className="p-3.5 sm:p-6 max-w-xl mx-auto space-y-4 animate-fade-in">
@@ -344,6 +352,15 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
           >
             <Search className="w-4 h-4 stroke-[2.5]" />
             <span>{t.searchBtn}</span>
+          </button>
+
+          <button
+            onClick={() => setIsAdhanModalOpen(true)}
+            className="px-3.5 h-10 rounded-xl bg-[var(--bg3)] border border-[var(--gold)]/40 hover:border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)]/10 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 font-bold text-xs shadow-sm"
+            title={isRtl ? 'إعدادات الأذان والتنبيهات الصوتية' : 'Adhan & Prayer Notification Settings'}
+          >
+            <BellRing className="w-4 h-4 animate-bounce" />
+            <span className="hidden sm:inline">{isRtl ? 'صوت الأذان' : 'Adhan Audio'}</span>
           </button>
 
           <button
@@ -526,6 +543,13 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
           </div>
         </div>
       )}
+
+      {/* Adhan Settings Modal */}
+      <AdhanSettingsModal
+        isOpen={isAdhanModalOpen}
+        onClose={() => setIsAdhanModalOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 };
