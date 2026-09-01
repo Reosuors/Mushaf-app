@@ -1,25 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Section } from '../types';
+import { Section, DesignStyleId } from '../types';
 import { TRANSLATIONS } from '../data/translations';
-import { Palette, Globe, ChevronDown, Check, Search, HardDrive, Wifi, WifiOff } from 'lucide-react';
+import { Palette, Globe, ChevronDown, Check, Search, HardDrive, Menu } from 'lucide-react';
 
 interface TopBarProps {
   lang: string;
   currentSection?: Section;
+  currentDesignStyle?: DesignStyleId;
   onSelectSection?: (section: Section) => void;
   onSelectLang: (code: string) => void;
   onOpenThemeModal: () => void;
   onOpenOfflineModal?: () => void;
+  onOpenDrawerMenu?: () => void;
   onLogoClick: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   lang,
   currentSection,
+  currentDesignStyle,
   onSelectSection,
   onSelectLang,
   onOpenThemeModal,
   onOpenOfflineModal,
+  onOpenDrawerMenu,
   onLogoClick,
 }) => {
   const [hijriDate, setHijriDate] = useState<string>('—');
@@ -96,8 +100,24 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header className="h-[54px] bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--border2)] flex items-center justify-between px-3 sm:px-5 shrink-0 relative z-50 transition-colors">
-      {/* App Logo */}
+      {/* Corner: Hamburger 3-line Menu Button + App Logo */}
       <div className="flex items-center gap-2">
+        {onOpenDrawerMenu && (
+          <button
+            id="topbar-drawer-menu-btn"
+            onClick={onOpenDrawerMenu}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 ${
+              currentDesignStyle === 'drawer_menu'
+                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold ring-2 ring-[var(--gold)]/50 shadow-md'
+                : 'bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] hover:border-[var(--gold)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/10'
+            }`}
+            title={isRtl ? 'القائمة الرئيسية (3 خطوط ☰)' : 'Main Menu (☰)'}
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        )}
+
         <button
           id="app-logo-btn"
           onClick={onLogoClick}

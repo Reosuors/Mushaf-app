@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TASBIH_LIST } from '../data/tasbih';
 import { TRANSLATIONS } from '../data/translations';
-import { RotateCcw, Minus, Plus, Sparkles, Award } from 'lucide-react';
+import { RotateCcw, Minus, Plus, Sparkles, Award, Smartphone, Check } from 'lucide-react';
+import { hapticFeedback } from '../utils/haptics';
 
 interface TasbihSectionProps {
   lang: string;
@@ -9,6 +10,7 @@ interface TasbihSectionProps {
 
 export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
+  const isRtl = lang === 'ar';
 
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [count, setCount] = useState<number>(() => {
@@ -18,14 +20,16 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
   const [totalLifetime, setTotalLifetime] = useState<number>(() => {
     return parseInt(localStorage.getItem('tasbih_lifetime') || '0', 10);
   });
+  const [hapticsOn, setHapticsOn] = useState<boolean>(() => hapticFeedback.isEnabled());
 
   const selectedItem = TASBIH_LIST[selectedIdx] || TASBIH_LIST[0];
 
   const handleIncrement = () => {
+    let nextCount = 0;
     setCount((prev) => {
-      const next = prev + 1;
-      localStorage.setItem('current_tasbih_count', String(next));
-      return next;
+      nextCount = prev + 1;
+      localStorage.setItem('current_tasbih_count', String(nextCount));
+      return nextCount;
     });
 
     setTotalLifetime((prev) => {
@@ -34,12 +38,17 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
       return next;
     });
 
-    if ('vibrate' in navigator) {
-      navigator.vibrate(30);
+    // Provide haptic feedback: standard crisp pulse for each count,
+    // and a celebratory rhythmic pattern when reaching cycle targets (e.g. 33, 100)
+    if (target > 0 && nextCount > 0 && nextCount % target === 0) {
+      hapticFeedback.tasbihCycle();
+    } else {
+      hapticFeedback.tasbih();
     }
   };
 
   const handleDecrement = () => {
+    hapticFeedback.light();
     setCount((prev) => {
       const next = Math.max(0, prev - 1);
       localStorage.setItem('current_tasbih_count', String(next));
@@ -48,8 +57,18 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
   };
 
   const handleReset = () => {
+    hapticFeedback.warning();
     setCount(0);
     localStorage.setItem('current_tasbih_count', '0');
+  };
+
+  const handleToggleHaptics = () => {
+    const nextState = !hapticsOn;
+    setHapticsOn(nextState);
+    hapticFeedback.setEnabled(nextState);
+    if (nextState) {
+      hapticFeedback.success();
+    }
   };
 
   // Keyboard shortcut: Spacebar to tap tasbih
@@ -62,7 +81,7 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [target]);
 
   const progress = target > 0 ? (count % target) / target : 0;
   const circ = 2 * Math.PI * 105; // radius = 105
@@ -77,6 +96,7 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
           <button
             key={idx}
             onClick={() => {
+              hapticFeedback.selection();
               setSelectedIdx(idx);
               setTarget(item.n || 33);
             }}
@@ -91,21 +111,43 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
         ))}
       </div>
 
-      {/* Target Goal Selector */}
-      <div className="flex items-center gap-2 bg-[var(--bg2)] border border-[var(--border2)] p-1 rounded-2xl shadow-sm">
-        {[33, 100, 1000].map((num) => (
-          <button
-            key={num}
-            onClick={() => setTarget(num)}
-            className={`px-3.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              target === num
-                ? 'bg-[var(--gold)]/20 text-[var(--gold)] border border-[var(--gold)]/30'
-                : 'text-[var(--text3)] hover:text-[var(--text)]'
-            }`}
-          >
-            {num}
-          </button>
-        ))}
+      {/* Target Goal & Haptics Quick Toggle */}
+      <div className="w-full flex items-center justify-between gap-2">
+        {/* Target Goal Selector */}
+        <div className="flex items-center gap-1.5 bg-[var(--bg2)] border border-[var(--border2)] p-1 rounded-2xl shadow-sm">
+          {[33, 100, 1000].map((num) => (
+            <button
+              key={num}
+              onClick={() => {
+                hapticFeedback.selection();
+                setTarget(num);
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                target === num
+                  ? 'bg-[var(--gold)]/20 text-[var(--gold)] border border-[var(--gold)]/30 shadow-xs'
+                  : 'text-[var(--text3)] hover:text-[var(--text)]'
+              }`}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+
+        {/* Haptic Vibration Feedback Toggle */}
+        <button
+          onClick={handleToggleHaptics}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+            hapticsOn
+              ? 'bg-[var(--gold)]/15 border-[var(--gold)] text-[var(--gold2)] shadow-xs'
+              : 'bg-[var(--bg2)] border-[var(--border2)] text-[var(--text3)] hover:text-[var(--text)]'
+          }`}
+          title={isRtl ? 'تفعيل / إيقاف الاهتزاز التفاعلي عند الضغط' : 'Toggle Haptic Vibration'}
+        >
+          <Smartphone className={`w-3.5 h-3.5 ${hapticsOn ? 'text-[var(--gold)]' : ''}`} />
+          <span className="text-[0.68rem]">
+            {isRtl ? (hapticsOn ? 'الاهتزاز مفعل' : 'الاهتزاز معطل') : (hapticsOn ? 'Haptics ON' : 'Haptics OFF')}
+          </span>
+        </button>
       </div>
 
       {/* Active Phrase Card */}

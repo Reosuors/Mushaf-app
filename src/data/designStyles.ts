@@ -1,0 +1,92 @@
+import { DesignStyleConfig, QuranFontConfig } from '../types';
+
+export const DESIGN_STYLES: DesignStyleConfig[] = [
+  {
+    id: 'modern',
+    nameAr: 'الحديث العصري (Modern App)',
+    nameEn: 'Modern App (Floating Bar)',
+    descAr: 'تصميم التطبيقات العصرية: شريط علوي أنيق، مساحات متوازنة، وشريط تنقل سفلي تفاعلي مع تأثيرات لمس سلسة.',
+    descEn: 'Contemporary balanced app layout with top header, rounded clean cards, and responsive bottom dock navigation.',
+    badgeAr: 'افتراضي عصري',
+    badgeEn: 'Modern Default',
+    icon: 'Sparkles',
+  },
+  {
+    id: 'top_navbar',
+    nameAr: 'الشريط العلوي فقط (Top Header Navigation)',
+    nameEn: 'Top Header Navigation Hub',
+    descAr: 'تصميم ينقل شريط التنقل بالكامل إلى الأعلى بجانب الشعار مع إلغاء وحذف الشريط السفلي تماماً لتوفير مساحة شاشة كاملة للقراءة والتصفح.',
+    descEn: 'Relocates all primary section tabs strictly to the upper top bar and completely eliminates the bottom bar for maximum viewport focus.',
+    badgeAr: 'شريط علوي (بدون سفلي)',
+    badgeEn: 'Top Bar Only',
+    icon: 'LayoutTemplate',
+  },
+  {
+    id: 'drawer_menu',
+    nameAr: 'القائمة الجانبية المنزلقة (3 خطوط ☰)',
+    nameEn: 'Side Hamburger Drawer Menu',
+    descAr: 'شاشة نقية خالية تماماً من الأشرطة السفلية: زر 3 خطوط في الزاوية العلوية يفتح قائمة انزلاقية فاخرة وسريعة للوصول لجميع الأقسام والأدوات.',
+    descEn: 'Clean distraction-free interface without bottom bar: Sleek 3-lines hamburger button in the top corner slides out a full-featured drawer.',
+    badgeAr: 'قائمة منزلقة ☰',
+    badgeEn: 'Drawer Menu',
+    icon: 'Menu',
+  },
+  {
+    id: 'sidebar_dashboard',
+    nameAr: 'اللوحة الشاملة والشريط الجانبي (Sidebar Dashboard)',
+    nameEn: 'Sidebar Dashboard Workspace',
+    descAr: 'تغيير هيكلي كامل: تحويل التنقل إلى شريط جانبي رأسي متكامل مع لوحة تحكم عريضة، مواقيت الصلاة المباشرة، وسرعة وصول فائقة للأقسام.',
+    descEn: 'Full structural revamp: Left/Right vertical sidebar workspace with live prayer glance widget, broad viewport, and desktop-grade controls.',
+    badgeAr: 'لوحة جانبية كاملة',
+    badgeEn: 'Sidebar Workspace',
+    icon: 'LayoutGrid',
+  },
+  {
+    id: 'mushaf_classic',
+    nameAr: 'المصحف التراثي المذهب (Classic Ornate Mushaf)',
+    nameEn: 'Classic Ornate Heritage Mushaf',
+    descAr: 'تصميم تراثي أصيل: إطارات مذهبة مزدوجة مستوحاة من المصاحف الشريفة العثمانية والأندلسية مع نقوش وزخارف حول الآيات والخلفيات.',
+    descEn: 'Traditional gilded borders, Andalusian double-line frames, antique parchment cards, and Quranic arabesque motifs.',
+    badgeAr: 'تراثي مذهب',
+    badgeEn: 'Classic Heritage',
+    icon: 'BookOpen',
+  },
+];
+
+export const QURAN_FONTS: QuranFontConfig[] = [
+  {
+    id: 'amiri_quran',
+    nameAr: 'خط المصحف الأميري (Amiri Quran)',
+    nameEn: 'Amiri Quran Calligraphy',
+    fontFamily: "'Amiri Quran', 'Amiri', serif",
+    descAr: 'خط المصحف الكلاسيكي المعتمد بضبط المصاحف والتشكيل القرآني المتراكب الأصيل.',
+  },
+  {
+    id: 'scheherazade',
+    nameAr: 'خط الرسم العثماني (Scheherazade New)',
+    nameEn: 'Scheherazade Uthmanic Naskh',
+    fontFamily: "'Scheherazade New', 'Amiri Quran', serif",
+    descAr: 'خط نسخ قرآني دقيق وواضح جداً للرسم العثماني وعلامات الوقف والآيات.',
+  },
+  {
+    id: 'noto_naskh',
+    nameAr: 'خط النسخ الواضح (Noto Naskh Arabic)',
+    nameEn: 'Noto Naskh Modern',
+    fontFamily: "'Noto Naskh Arabic', 'Amiri Quran', serif",
+    descAr: 'خط نسخ واضح عالي المقروئية على جميع الشاشات والهواتف بدقة فائقة.',
+  },
+  {
+    id: 'reem_kufi',
+    nameAr: 'الخط الكوفي المصحفي (Reem Kufi)',
+    nameEn: 'Reem Kufi Calligraphy',
+    fontFamily: "'Reem Kufi', 'Amiri', serif",
+    descAr: 'خط مستوحى من الخطوط المصحفية القديمة والعناوين الإسلامية التاريخية.',
+  },
+  {
+    id: 'amiri',
+    nameAr: 'خط المطبعة الأميرية (Amiri Naskh)',
+    nameEn: 'Amiri Classic Naskh',
+    fontFamily: "'Amiri', serif",
+    descAr: 'خط مطبعة بولاق التراثي الشهير برسمه المتناسق الأنيق.',
+  },
+];

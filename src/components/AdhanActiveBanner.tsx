@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { AdhanEventDetail } from '../utils/prayerNotifications';
 import { stopAdhanAudio } from '../utils/adhanAudio';
-import { Bell, VolumeX, X, Check, Heart, Sparkles } from 'lucide-react';
+import { getUIStrings } from '../utils/uiTranslations';
+import { TRANSLATIONS } from '../data/translations';
+import { VolumeX, X, Sparkles } from 'lucide-react';
 
 export const AdhanActiveBanner: React.FC<{ lang: string }> = ({ lang }) => {
   const [activeDetail, setActiveDetail] = useState<AdhanEventDetail | null>(null);
   const [showDuaa, setShowDuaa] = useState(false);
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ui = getUIStrings(lang);
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
 
   useEffect(() => {
     const handleAdhanTriggered = (e: Event) => {
@@ -28,6 +32,17 @@ export const AdhanActiveBanner: React.FC<{ lang: string }> = ({ lang }) => {
     setActiveDetail(null);
   };
 
+  const getLocalizedPrayerName = () => {
+    const prayerKey = (activeDetail.prayerKey || '').toLowerCase();
+    if (prayerKey.includes('fajr')) return t.fajr;
+    if (prayerKey.includes('sunrise')) return t.sunrise;
+    if (prayerKey.includes('dhuhr')) return t.dhuhr;
+    if (prayerKey.includes('asr')) return t.asr;
+    if (prayerKey.includes('maghrib')) return t.maghrib;
+    if (prayerKey.includes('isha')) return t.isha;
+    return isRtl ? activeDetail.prayerNameAr : activeDetail.prayerNameEn;
+  };
+
   return (
     <div className="fixed top-3 inset-x-3 sm:inset-x-auto sm:right-6 sm:w-96 z-[990] animate-drop-in">
       <div className="bg-[var(--bg2)]/98 backdrop-blur-xl border-2 border-[var(--gold)] rounded-3xl p-4 shadow-[0_10px_35px_rgba(201,168,76,0.35)] space-y-3">
@@ -39,10 +54,10 @@ export const AdhanActiveBanner: React.FC<{ lang: string }> = ({ lang }) => {
             </div>
             <div>
               <span className="text-[0.65rem] font-bold text-[var(--gold2)] uppercase tracking-wider block">
-                {isRtl ? 'حان الآن موعد الأذان' : 'Call to Prayer'}
+                {ui.adhanBannerTitle}
               </span>
               <h4 className="font-amiri text-base sm:text-lg font-bold text-[var(--text)] leading-none">
-                {isRtl ? activeDetail.prayerNameAr : activeDetail.prayerNameEn}
+                {getLocalizedPrayerName()}
               </h4>
             </div>
           </div>
@@ -51,7 +66,7 @@ export const AdhanActiveBanner: React.FC<{ lang: string }> = ({ lang }) => {
             <button
               onClick={handleDismiss}
               className="p-2 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] text-[var(--text2)] hover:text-white transition-all cursor-pointer"
-              title={isRtl ? 'إيقاف الصوت وإغلاق' : 'Stop & Close'}
+              title={ui.adhanStopClose}
             >
               <VolumeX className="w-4 h-4 text-red-400" />
             </button>
@@ -77,12 +92,12 @@ export const AdhanActiveBanner: React.FC<{ lang: string }> = ({ lang }) => {
             className="w-full py-2 rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 hover:bg-[var(--gold)]/20 text-[var(--gold)] text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'عرض دعاء ما بعد الأذان' : 'Show Duaa After Adhan'}</span>
+            <span>{ui.adhanDuaaShow}</span>
           </button>
         ) : (
           <div className="bg-gradient-to-br from-[var(--bg3)] to-[var(--bg2)] border border-[var(--gold)]/30 rounded-2xl p-3 text-center space-y-1.5 animate-fade-in">
             <span className="text-[0.65rem] text-[var(--gold2)] font-bold block">
-              {isRtl ? 'دعاء ما بعد الأذان المستحب:' : 'Supplication after Adhan:'}
+              {ui.adhanDuaaTitle}
             </span>
             <p className="font-amiri text-xs sm:text-sm text-[var(--text)] leading-relaxed dir-rtl">
               «اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ الْقَائِمَةِ، آتِ مُحَمَّداً الْوَسِيلَةَ وَالْفَضِيلَةَ، وَابْعَثْهُ مَقَاماً مَحْمُوداً الَّذِي وَعَدْتَهُ»

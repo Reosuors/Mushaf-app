@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Section, Reciter, RepeatSession, TafsirState } from './types';
+import { Section, Reciter, RepeatSession, TafsirState, DesignStyleId, QuranFontId, AyahCardData } from './types';
 import { SURAHS } from './data/surahs';
 import { THEMES } from './data/themes';
 import { TRANSLATIONS } from './data/translations';
@@ -20,6 +20,13 @@ import { DiscordFab } from './components/DiscordFab';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { AdhanActiveBanner } from './components/AdhanActiveBanner';
+import { SidebarDashboardNav } from './components/SidebarDashboardNav';
+import { PortalHeaderHub } from './components/PortalHeaderHub';
+import { DrawerMenu } from './components/DrawerMenu';
+import { TopNavbarHub } from './components/TopNavbarHub';
+import { KhatmahModal } from './components/KhatmahModal';
+import { AyahCardModal } from './components/AyahCardModal';
+import { AmbientFocusAudio } from './components/AmbientFocusAudio';
 import { getDownloadedSurahNumbers } from './utils/offlineStorage';
 
 // Section Views
@@ -49,6 +56,13 @@ export const App: React.FC = () => {
   // 1. Language & Theme State
   const [lang, setLang] = useState<string>(() => localStorage.getItem('mushaf_lang') || 'ar');
   const [currentTheme, setCurrentTheme] = useState<string>(() => localStorage.getItem('mushaf_theme') || 'dark-gold');
+  const [currentDesignStyle, setCurrentDesignStyle] = useState<DesignStyleId>(
+    () => (localStorage.getItem('mushaf_design_style') as DesignStyleId) || 'modern'
+  );
+  const [currentQuranFont, setCurrentQuranFont] = useState<QuranFontId>(
+    () => (localStorage.getItem('quran_font_family') as QuranFontId) || 'amiri_quran'
+  );
+  const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
 
   // 2. Navigation State
   const [currentSection, setCurrentSection] = useState<Section>('quran');
@@ -81,6 +95,8 @@ export const App: React.FC = () => {
   const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
+  const [isKhatmahModalOpen, setIsKhatmahModalOpen] = useState(false);
+  const [ayahCardData, setAyahCardData] = useState<AyahCardData | null>(null);
   const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>([]);
   const [tafsirState, setTafsirState] = useState<TafsirState>({
     isOpen: false,
@@ -107,7 +123,7 @@ export const App: React.FC = () => {
     getDownloadedSurahNumbers().then((nums) => setDownloadedSurahs(nums)).catch(() => {});
   }, []);
 
-  // Sync Theme & RTL
+  // Sync Theme & RTL & Design Style
   useEffect(() => {
     const themeObj = THEMES.find((t) => t.id === currentTheme) || THEMES[0];
     if (themeObj && themeObj.vars) {
@@ -119,6 +135,11 @@ export const App: React.FC = () => {
     document.body.className = `theme-${currentTheme}`;
     localStorage.setItem('mushaf_theme', currentTheme);
   }, [currentTheme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-design-style', currentDesignStyle);
+    localStorage.setItem('mushaf_design_style', currentDesignStyle);
+  }, [currentDesignStyle]);
 
   useEffect(() => {
     localStorage.setItem('mushaf_lang', lang);
@@ -459,7 +480,7 @@ export const App: React.FC = () => {
   };
 
   // Open Tafsir Modal
-  const handleOpenTafsir = async (
+  const handleOpenTafsir = (
     surahNumber: number,
     ayahNumber: number,
     arabicText: string
@@ -470,27 +491,9 @@ export const App: React.FC = () => {
       ayahNumber,
       ayahArabicText: arabicText,
       tafsirText: '',
-      sourceSlug: 'تفسير الميسر',
-      isLoading: true,
+      sourceSlug: '',
+      isLoading: false,
     });
-
-    try {
-      const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}/ar.muyassar`);
-      const data = await res.json();
-      if (data.code === 200) {
-        setTafsirState((prev) => ({
-          ...prev,
-          tafsirText: data.data.text,
-          isLoading: false,
-        }));
-      }
-    } catch {
-      setTafsirState((prev) => ({
-        ...prev,
-        tafsirText: 'تعذر تحميل التفسير في الوقت الحالي، يرجى المحاولة لاحقاً.',
-        isLoading: false,
-      }));
-    }
   };
 
   const activeSurahInfo = selectedSurahNumber
@@ -503,6 +506,7 @@ export const App: React.FC = () => {
       <TopBar
         lang={lang}
         currentSection={currentSection}
+        currentDesignStyle={currentDesignStyle}
         onSelectSection={(sec) => {
           setSelectedSurahNumber(null);
           setIsMemTestOpen(false);
@@ -511,6 +515,7 @@ export const App: React.FC = () => {
         onSelectLang={(code) => setLang(code)}
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
         onOpenOfflineModal={() => setIsOfflineModalOpen(true)}
+        onOpenDrawerMenu={() => setIsDrawerMenuOpen(true)}
         onLogoClick={() => {
           setSelectedSurahNumber(null);
           setIsMemTestOpen(false);
@@ -521,82 +526,139 @@ export const App: React.FC = () => {
       {/* Live Adhan Screen Banner */}
       <AdhanActiveBanner lang={lang} />
 
-      {/* Main Content Area - Scrollable */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative pb-6">
-        {/* If Memorization Test is active */}
-        {isMemTestOpen ? (
-          <MemTestSection
-            lang={lang}
-            onBack={() => setIsMemTestOpen(false)}
-          />
-        ) : selectedSurahNumber !== null ? (
-          /* Surah Reader View */
-          <SurahView
-            surahNumber={selectedSurahNumber}
-            initialAyahNumber={selectedAyahNumber}
-            lang={lang}
-            reciters={reciters}
-            selectedReciter={selectedReciter}
-            currentPlayingAyah={currentPlayingAyah}
-            isPlaying={isPlaying}
-            onBack={() => {
-              setSelectedSurahNumber(null);
-              setSelectedAyahNumber(undefined);
-            }}
-            onSelectReciter={(r) => setSelectedReciter(r)}
-            onPlaySurah={(sn) => playSurahAudio(sn)}
-            onPlayAyah={(sn, an) => playAyahAudio(sn, an)}
-            onOpenRepeatModal={(sn) => {
-              setSelectedSurahNumber(sn);
-              setIsRepeatModalOpen(true);
-            }}
-            onOpenTafsir={(sn, an, text) => handleOpenTafsir(sn, an, text)}
-          />
-        ) : (
-          /* Bottom Navigation Sections */
-          <>
-            {currentSection === 'prayer' && (
-              <PrayerSection
-                lang={lang}
-                city={city}
-                country={country}
-                onUpdateLocation={(c, co) => {
-                  setCity(c);
-                  setCountry(co);
-                  localStorage.setItem('mushaf_city', c);
-                  localStorage.setItem('mushaf_country', co);
-                }}
-              />
-            )}
+      {/* Top Navigation Bar Layout when 'top_navbar' is active */}
+      {currentDesignStyle === 'top_navbar' && (
+        <TopNavbarHub
+          currentSection={currentSection}
+          onSelectSection={(sec) => {
+            setSelectedSurahNumber(null);
+            setIsMemTestOpen(false);
+            setCurrentSection(sec);
+          }}
+          lang={lang}
+          onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+        />
+      )}
 
-            {currentSection === 'quran' && (
-              <QuranSection
-                lang={lang}
-                downloadedSurahs={downloadedSurahs}
-                onSelectSurah={(sn, an) => {
-                  setSelectedSurahNumber(sn);
-                  setSelectedAyahNumber(an);
-                }}
-                onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
-                onOpenMemorizationTest={() => setIsMemTestOpen(true)}
-                onOpenOfflineManager={() => setIsOfflineModalOpen(true)}
-                onOpenRepeatModal={(sn) => {
-                  if (sn) setSelectedSurahNumber(sn);
-                  setIsRepeatModalOpen(true);
-                }}
-              />
-            )}
+      {/* Optional Split Portal Header Hub */}
+      {currentDesignStyle === 'portal_hub' && selectedSurahNumber === null && !isMemTestOpen && (
+        <PortalHeaderHub
+          currentSection={currentSection}
+          onSelectSection={(sec) => {
+            setSelectedSurahNumber(null);
+            setIsMemTestOpen(false);
+            setCurrentSection(sec);
+          }}
+          lang={lang}
+          onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+        />
+      )}
 
-            {currentSection === 'azkar' && <AzkarSection lang={lang} />}
-
-            {currentSection === 'tasbih' && <TasbihSection lang={lang} />}
-
-            {currentSection === 'asma' && <AsmaSection lang={lang} />}
-
-            {currentSection === 'support' && <SupportSection lang={lang} />}
-          </>
+      {/* Main Body Workspace Container */}
+      <div className="flex-1 flex overflow-hidden min-h-0 relative">
+        {/* Persistent Side Navigation Bar for Sidebar Dashboard Layout */}
+        {currentDesignStyle === 'sidebar_dashboard' && (
+          <div className="hidden md:flex shrink-0 h-full">
+            <SidebarDashboardNav
+              currentSection={currentSection}
+              onSelectSection={(sec) => {
+                setSelectedSurahNumber(null);
+                setIsMemTestOpen(false);
+                setCurrentSection(sec);
+              }}
+              lang={lang}
+              onOpenThemeModal={() => setIsThemeModalOpen(true)}
+              onOpenOfflineModal={() => setIsOfflineModalOpen(true)}
+              onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+              onLogoClick={() => {
+                setSelectedSurahNumber(null);
+                setIsMemTestOpen(false);
+                setCurrentSection('quran');
+              }}
+            />
+          </div>
         )}
-      </main>
+
+        {/* Main Content Area - Scrollable */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative pb-6">
+          {/* If Memorization Test is active */}
+          {isMemTestOpen ? (
+            <MemTestSection
+              lang={lang}
+              onBack={() => setIsMemTestOpen(false)}
+            />
+          ) : selectedSurahNumber !== null ? (
+            /* Surah Reader View */
+            <SurahView
+              surahNumber={selectedSurahNumber}
+              initialAyahNumber={selectedAyahNumber}
+              lang={lang}
+              reciters={reciters}
+              selectedReciter={selectedReciter}
+              currentPlayingAyah={currentPlayingAyah}
+              isPlaying={isPlaying}
+              currentQuranFont={currentQuranFont}
+              onBack={() => {
+                setSelectedSurahNumber(null);
+                setSelectedAyahNumber(undefined);
+              }}
+              onSelectReciter={(r) => setSelectedReciter(r)}
+              onPlaySurah={(sn) => playSurahAudio(sn)}
+              onPlayAyah={(sn, an) => playAyahAudio(sn, an)}
+              onOpenRepeatModal={(sn) => {
+                setSelectedSurahNumber(sn);
+                setIsRepeatModalOpen(true);
+              }}
+              onOpenTafsir={(sn, an, text) => handleOpenTafsir(sn, an, text)}
+              onOpenAyahCard={(cardData) => setAyahCardData(cardData)}
+            />
+          ) : (
+            /* Main Sections */
+            <>
+              {currentSection === 'prayer' && (
+                <PrayerSection
+                  lang={lang}
+                  city={city}
+                  country={country}
+                  onUpdateLocation={(c, co) => {
+                    setCity(c);
+                    setCountry(co);
+                    localStorage.setItem('mushaf_city', c);
+                    localStorage.setItem('mushaf_country', co);
+                  }}
+                />
+              )}
+
+              {currentSection === 'quran' && (
+                <QuranSection
+                  lang={lang}
+                  downloadedSurahs={downloadedSurahs}
+                  onSelectSurah={(sn, an) => {
+                    setSelectedSurahNumber(sn);
+                    setSelectedAyahNumber(an);
+                  }}
+                  onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+                  onOpenMemorizationTest={() => setIsMemTestOpen(true)}
+                  onOpenOfflineManager={() => setIsOfflineModalOpen(true)}
+                  onOpenKhatmahModal={() => setIsKhatmahModalOpen(true)}
+                  onOpenRepeatModal={(sn) => {
+                    if (sn) setSelectedSurahNumber(sn);
+                    setIsRepeatModalOpen(true);
+                  }}
+                />
+              )}
+
+              {currentSection === 'azkar' && <AzkarSection lang={lang} />}
+
+              {currentSection === 'tasbih' && <TasbihSection lang={lang} />}
+
+              {currentSection === 'asma' && <AsmaSection lang={lang} />}
+
+              {currentSection === 'support' && <SupportSection lang={lang} />}
+            </>
+          )}
+        </main>
+      </div>
 
       {/* Discord Floating Action Button */}
       <DiscordFab label="Discord" audioVisible={audioVisible} />
@@ -631,42 +693,102 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Bottom App Navigation */}
-      <BottomNav
+      {/* Bottom App Navigation (completely hidden if Top Navbar, Drawer Menu, or Portal Hub layout is selected) */}
+      <div
+        className={
+          currentDesignStyle === 'top_navbar' ||
+          currentDesignStyle === 'drawer_menu' ||
+          currentDesignStyle === 'portal_hub'
+            ? 'hidden'
+            : currentDesignStyle === 'sidebar_dashboard'
+            ? 'md:hidden'
+            : ''
+        }
+      >
+        <BottomNav
+          currentSection={currentSection}
+          onSelectSection={(sec) => {
+            setSelectedSurahNumber(null);
+            setIsMemTestOpen(false);
+            setCurrentSection(sec);
+          }}
+          lang={lang}
+        />
+      </div>
+
+      {/* Slide-out Drawer Hamburger Menu */}
+      <DrawerMenu
+        isOpen={isDrawerMenuOpen}
+        onClose={() => setIsDrawerMenuOpen(false)}
         currentSection={currentSection}
         onSelectSection={(sec) => {
           setSelectedSurahNumber(null);
           setIsMemTestOpen(false);
           setCurrentSection(sec);
+          setIsDrawerMenuOpen(false);
         }}
         lang={lang}
+        onOpenThemeModal={() => setIsThemeModalOpen(true)}
+        onOpenOfflineModal={() => setIsOfflineModalOpen(true)}
+        onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+        onOpenKhatmahModal={() => setIsKhatmahModalOpen(true)}
+        onOpenMemTest={() => {
+          setIsMemTestOpen(true);
+          setIsDrawerMenuOpen(false);
+        }}
       />
 
-      {/* Theme Picker Modal */}
+      {/* Theme & Design Picker Modal */}
       <ThemeModal
         isOpen={isThemeModalOpen}
         currentThemeId={currentTheme}
+        currentDesignStyle={currentDesignStyle}
+        currentQuranFont={currentQuranFont}
         onSelectTheme={(themeId) => {
           setCurrentTheme(themeId);
-          setIsThemeModalOpen(false);
+        }}
+        onSelectDesignStyle={(designId) => {
+          setCurrentDesignStyle(designId);
+        }}
+        onSelectQuranFont={(fontId) => {
+          setCurrentQuranFont(fontId);
+          localStorage.setItem('quran_font_family', fontId);
         }}
         onClose={() => setIsThemeModalOpen(false)}
         lang={lang}
       />
 
-      {/* Tafsir Sheet Modal */}
+      {/* Quran Khatmah Goal Planner Modal */}
+      <KhatmahModal
+        isOpen={isKhatmahModalOpen}
+        onClose={() => setIsKhatmahModalOpen(false)}
+        lang={lang}
+      />
+
+      {/* Visual Ayah Card Studio & Export Modal */}
+      <AyahCardModal
+        isOpen={!!ayahCardData}
+        onClose={() => setAyahCardData(null)}
+        ayahData={ayahCardData}
+        lang={lang}
+      />
+
+      {/* Ambient Nature Focus Soundscapes (Rain, Birds, Waves, Breeze) */}
+      <AmbientFocusAudio lang={lang} />
+
+      {/* Multilingual Tafsir & Translation Modal */}
       <TafsirModal
         isOpen={tafsirState.isOpen}
+        surahNumber={tafsirState.surahNumber}
+        ayahNumber={tafsirState.ayahNumber}
         surahName={
           activeSurahInfo
-            ? activeSurahInfo[lang as keyof typeof activeSurahInfo] || activeSurahInfo.ar
+            ? (activeSurahInfo as any)[lang] || activeSurahInfo.ar
             : ''
         }
-        ayahNumber={tafsirState.ayahNumber}
         ayahArabicText={tafsirState.ayahArabicText}
-        tafsirText={tafsirState.tafsirText}
-        sourceSlug={tafsirState.sourceSlug}
-        isLoading={tafsirState.isLoading}
+        initialTafsirText={tafsirState.tafsirText}
+        initialSourceSlug={tafsirState.sourceSlug}
         lang={lang}
         onPlayAyah={() => {
           if (tafsirState.surahNumber && tafsirState.ayahNumber) {

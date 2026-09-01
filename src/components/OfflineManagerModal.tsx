@@ -4,7 +4,6 @@ import {
   CheckCircle2, 
   Wifi, 
   WifiOff, 
-  HardDrive, 
   Trash2, 
   Sparkles, 
   X, 
@@ -23,6 +22,8 @@ import {
   clearAllOfflineStorage 
 } from '../utils/offlineStorage';
 import { DownloadProgress } from '../types';
+import { getUIStrings } from '../utils/uiTranslations';
+import { TRANSLATIONS } from '../data/translations';
 
 interface OfflineManagerModalProps {
   isOpen: boolean;
@@ -51,7 +52,9 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
   const [singleDownloading, setSingleDownloading] = useState<number | null>(null);
   const cancelSignalRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
-  const isRtl = lang === 'ar' || lang === 'ur';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ui = getUIStrings(lang);
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
 
   const refreshDownloadedList = async () => {
     const list = await getDownloadedSurahNumbers();
@@ -133,13 +136,13 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-amiri flex items-center gap-2">
-                {isRtl ? 'إدارة الوضع بدون إنترنت (Offline Mode)' : 'Offline Mode & Downloads'}
+                {ui.offlineManagerTitle}
                 <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--gold)]/10 text-[var(--gold2)] font-sans font-medium">
-                  {percentage}% {isRtl ? 'جاهز' : 'ready'}
+                  {percentage}% {t.completed || 'ready'}
                 </span>
               </h2>
               <p className="text-xs text-[var(--text3)]">
-                {isRtl ? 'تصفح القرآن والصلاة والأذكار في أي وقت دون اتصال' : 'Access Quran, Prayer & Azkar anywhere without internet'}
+                {ui.offlineAllSurahs}
               </p>
             </div>
           </div>
@@ -157,19 +160,19 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
             {isOnline ? (
               <span className="flex items-center gap-1.5 text-emerald-500 font-semibold">
                 <Wifi className="w-3.5 h-3.5" />
-                {isRtl ? 'متصل بالشبكة (Online)' : 'Connected (Online)'}
+                {ui.statusOnline}
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-amber-500 font-semibold">
                 <WifiOff className="w-3.5 h-3.5" />
-                {isRtl ? 'بدون إنترنت (Offline)' : 'No Internet (Offline)'}
+                {ui.statusOffline}
               </span>
             )}
           </div>
           <div className="flex items-center gap-3 text-[var(--text3)]">
             <span className="flex items-center gap-1">
               <BookOpen className="w-3.5 h-3.5 text-[var(--gold)]" />
-              {downloadedCount} / 114 {isRtl ? 'سورة' : 'Surahs'}
+              {downloadedCount} / 114 {t.surahWord || 'Surahs'}
             </span>
             {downloadedCount > 0 && (
               <button
@@ -189,22 +192,22 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
           <div className="p-2.5 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] flex items-center gap-2">
             <Clock className="w-4 h-4 text-[var(--gold)] shrink-0" />
             <div className="leading-tight">
-              <div className="font-bold text-[var(--text)]">{isRtl ? 'مواقيت الصلاة' : 'Prayer Times'}</div>
-              <div className="text-[0.68rem] text-[var(--text3)]">{isRtl ? 'حساب فلكي دقيق 100%' : '100% astronomical'}</div>
+              <div className="font-bold text-[var(--text)]">{t.navPrayer || 'Prayer'}</div>
+              <div className="text-[0.68rem] text-[var(--text3)]">100% Astronomical</div>
             </div>
           </div>
           <div className="p-2.5 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[var(--gold)] shrink-0" />
             <div className="leading-tight">
-              <div className="font-bold text-[var(--text)]">{isRtl ? 'الأذكار والتسبيح' : 'Azkar & Tasbih'}</div>
-              <div className="text-[0.68rem] text-[var(--text3)]">{isRtl ? 'متاحة بالكامل دائماً' : 'Fully offline ready'}</div>
+              <div className="font-bold text-[var(--text)]">{t.navAzkar || 'Azkar'}</div>
+              <div className="text-[0.68rem] text-[var(--text3)]">100% Offline Ready</div>
             </div>
           </div>
           <div className="p-2.5 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[var(--gold)] shrink-0" />
             <div className="leading-tight">
-              <div className="font-bold text-[var(--text)]">{isRtl ? 'حفظ محلي آمن' : 'Local Storage'}</div>
-              <div className="text-[0.68rem] text-[var(--text3)]">{isRtl ? 'قاعدة بيانات IndexedDB' : 'Fast IndexedDB'}</div>
+              <div className="font-bold text-[var(--text)]">{ui.offlineSaved}</div>
+              <div className="text-[0.68rem] text-[var(--text3)]">IndexedDB Cache</div>
             </div>
           </div>
         </div>
@@ -216,7 +219,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-[var(--gold2)] flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[var(--gold)] animate-ping" />
-                  {isRtl ? `جاري تحميل سورة ${downloadProgress.currentSurahName}...` : `Downloading ${downloadProgress.currentSurahName}...`}
+                  {ui.offlineDownloading} {downloadProgress.currentSurahName}
                 </span>
                 <span className="text-[var(--text3)] font-mono">
                   {downloadProgress.current} / {downloadProgress.total}
@@ -240,12 +243,12 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
               <div>
                 <div className="text-xs sm:text-sm font-bold text-[var(--text)]">
                   {downloadedCount === 114 
-                    ? (isRtl ? 'المصحف كاملاً متاح بدون إنترنت 🎉' : 'Complete Quran is available offline 🎉')
-                    : (isRtl ? 'تحميل سور المصحف للقراءة بدون إنترنت' : 'Download Quran for Offline Reading')
+                    ? (ui.offlineCompletedBadge)
+                    : (ui.offlineDownloadAll)
                   }
                 </div>
                 <div className="text-[0.72rem] text-[var(--text3)]">
-                  {isRtl ? 'حجم البيانات خفيف جداً (~3 ميغابايت للنصوص والتفاسير)' : 'Lightweight text footprint (~3MB for all verses)'}
+                  {ui.offlineSaved}
                 </div>
               </div>
 
@@ -256,7 +259,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all whitespace-nowrap"
                 >
                   <Download className="w-4 h-4" />
-                  {isRtl ? 'تحميل المصحف كاملاً (114 سورة)' : 'Download All 114 Surahs'}
+                  {ui.offlineDownloadAll}
                 </button>
               )}
             </div>
@@ -267,7 +270,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
         <div className="p-3 border-b border-[var(--border2)] bg-[var(--bg3)]/50">
           <input
             type="text"
-            placeholder={isRtl ? 'ابحث عن سورة لتحميلها أو حذفها...' : 'Search surah to download or manage...'}
+            placeholder={t.searchSurahPh || 'Search surah...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text)] text-xs rounded-xl px-3 py-2 outline-none focus:border-[var(--gold)]"
@@ -278,6 +281,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
           {filteredSurahs.map((surah) => {
             const isDownloaded = downloadedSurahs.includes(surah.n);
             const isSingleLoading = singleDownloading === surah.n;
+            const surahTitle = surah[lang as keyof typeof surah] || (isRtl ? surah.ar : surah.en);
 
             return (
               <div
@@ -290,10 +294,10 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
                   </div>
                   <div>
                     <div className="text-xs sm:text-sm font-bold text-[var(--text)] font-amiri">
-                      {isRtl ? `سورة ${surah.ar}` : surah.en}
+                      {t.surahWord} {surahTitle}
                     </div>
                     <div className="text-[0.68rem] text-[var(--text3)]">
-                      {surah.a} {isRtl ? 'آية' : 'Ayahs'} • {surah.t}
+                      {surah.a} {t.ayah} • {surah.t}
                     </div>
                   </div>
                 </div>
@@ -303,7 +307,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
                     <div className="flex items-center gap-1.5">
                       <span className="text-[0.68rem] text-emerald-500 font-semibold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        {isRtl ? 'محفوظة' : 'Saved'}
+                        {ui.offlineSavedBadge}
                       </span>
                       <button
                         onClick={() => handleDeleteSingle(surah.n)}
@@ -339,7 +343,7 @@ export const OfflineManagerModal: React.FC<OfflineManagerModalProps> = ({
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-[var(--gold)] text-black text-xs font-bold hover:bg-[var(--gold2)] transition-colors cursor-pointer"
           >
-            {isRtl ? 'تم / إغلاق' : 'Done / Close'}
+            {t.done || 'Done'}
           </button>
         </div>
       </div>
