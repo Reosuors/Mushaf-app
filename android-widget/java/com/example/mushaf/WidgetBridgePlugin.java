@@ -33,6 +33,7 @@ public class WidgetBridgePlugin extends Plugin {
         editor.apply();
 
         MushafWidgetProvider.updateAll(getContext());
+        PrayerWidgetProvider.updateAll(getContext());
         call.resolve(new JSObject().put("updated", true));
     }
 }

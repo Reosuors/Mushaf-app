@@ -9,22 +9,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
 
-public class MushafWidgetProvider extends AppWidgetProvider {
-    public static final String ACTION_DAILY_UPDATE = "com.example.mushaf.WIDGET_DAILY_UPDATE";
+public class PrayerWidgetProvider extends AppWidgetProvider {
+    public static final String ACTION_DAILY_UPDATE = "com.example.mushaf.PRAYER_WIDGET_DAILY_UPDATE";
     private static final String PREFS = "mushaf_widget";
-    private static final String[] AYAT = {
-            "إِنَّ مَعَ الْعُسْرِ يُسْرًا", "فَاذْكُرُونِي أَذْكُرْكُمْ",
-            "وَقُلْ رَبِّ زِدْنِي عِلْمًا", "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
-            "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا", "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ"
-    };
-    private static final String[] SURAHS = {
-            "الشرح • الآية 6", "البقرة • الآية 152", "طه • الآية 114",
-            "البقرة • الآية 153", "الطلاق • الآية 2", "الرعد • الآية 28"
-    };
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         for (int id : ids) update(context, manager, id);
@@ -43,24 +35,38 @@ public class MushafWidgetProvider extends AppWidgetProvider {
 
     public static void updateAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        ComponentName component = new ComponentName(context, MushafWidgetProvider.class);
+        ComponentName component = new ComponentName(context, PrayerWidgetProvider.class);
         for (int id : manager.getAppWidgetIds(component)) update(context, manager, id);
     }
 
     private static void update(Context context, AppWidgetManager manager, int id) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        int index = (Calendar.getInstance().get(Calendar.DAY_OF_YEAR) - 1) % AYAT.length;
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_ayah_day);
-        views.setTextViewText(R.id.widget_ayah_text, AYAT[index]);
-        views.setTextViewText(R.id.widget_ayah_reference, SURAHS[index]);
-        views.setTextViewText(R.id.widget_ayah_city, p.getString("city", "مصحف"));
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_prayer);
+        views.setTextViewText(R.id.widget_prayer_city, p.getString("city", "الموقع الحالي"));
+        String summary = p.getString("prayers", "الفجر --  •  الظهر --  •  العصر --  •  المغرب --  •  العشاء --");
+        String[] values = summary.split("  •  ", -1);
+        int[] rowIds = { R.id.prayer_row_fajr, R.id.prayer_row_dhuhr, R.id.prayer_row_asr, R.id.prayer_row_maghrib, R.id.prayer_row_isha };
+        int[] timeIds = { R.id.prayer_time_fajr, R.id.prayer_time_dhuhr, R.id.prayer_time_asr, R.id.prayer_time_maghrib, R.id.prayer_time_isha };
+        int[] names = { R.id.prayer_name_fajr, R.id.prayer_name_dhuhr, R.id.prayer_name_asr, R.id.prayer_name_maghrib, R.id.prayer_name_isha };
+        int width = manager.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 300);
+        int visibleRows = width < 210 ? 2 : (width < 300 ? 3 : 5);
+        for (int i = 0; i < rowIds.length; i++) {
+            boolean visible = i < visibleRows;
+            views.setViewVisibility(rowIds[i], visible ? View.VISIBLE : View.GONE);
+            if (visible) {
+                String item = i < values.length ? values[i].trim() : "--";
+                String[] parts = item.split(" ", 2);
+                views.setTextViewText(names[i], parts.length > 0 ? parts[0] : "الصلاة");
+                views.setTextViewText(timeIds[i], parts.length > 1 ? parts[1] : "--");
+            }
+        }
         manager.updateAppWidget(id, views);
     }
 
     private static void scheduleDailyUpdate(Context context) {
         AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, MushafWidgetProvider.class).setAction(ACTION_DAILY_UPDATE);
-        PendingIntent pending = PendingIntent.getBroadcast(context, 9001, intent,
+        Intent intent = new Intent(context, PrayerWidgetProvider.class).setAction(ACTION_DAILY_UPDATE);
+        PendingIntent pending = PendingIntent.getBroadcast(context, 9002, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         Calendar next = Calendar.getInstance();
         next.add(Calendar.DAY_OF_YEAR, 1);
