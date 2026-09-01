@@ -9,6 +9,7 @@ import { AdhanSettingsModal } from './AdhanSettingsModal';
 import { checkPrayerTimesForAdhan, loadAdhanSettings } from '../utils/prayerNotifications';
 import { Search, MapPin, Compass, ChevronDown, Clock, Loader2, Zap, Wifi, BellRing, Bell } from 'lucide-react';
 import { requestLocationPermission } from '../utils/permissions';
+import { syncWidgetData } from '../utils/widget';
 
 interface PrayerSectionProps {
   lang: string;
@@ -212,6 +213,24 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
       }
     }
   };
+
+  // Keep the home-screen widget supplied with the latest prayer times.
+  useEffect(() => {
+    if (!prayerData?.timings) return;
+    const timings = prayerData.timings;
+    const prayerSummary = [
+      `الفجر ${timings.Fajr}`,
+      `الظهر ${timings.Dhuhr}`,
+      `العصر ${timings.Asr}`,
+      `المغرب ${timings.Maghrib}`,
+      `العشاء ${timings.Isha}`,
+    ].join('  •  ');
+    void syncWidgetData({
+      mode: 'ayah',
+      prayers: prayerSummary,
+      city: inputCity || city || 'الموقع الحالي',
+    });
+  }, [prayerData, inputCity, city]);
 
   // Live countdown calculation
   useEffect(() => {
