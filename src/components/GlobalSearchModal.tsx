@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { TRANSLATIONS } from '../data/translations';
 import { SURAHS } from '../data/surahs';
-import { Search, X, BookOpen, Sparkles, Loader2, AlertCircle, ArrowRight, HelpCircle } from 'lucide-react';
-import { smartSearchQuran, SearchResultItem, normalizeArabic } from '../utils/quranSearch';
+import { Search, X, BookOpen, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { smartSearchQuran, SearchResultItem } from '../utils/quranSearch';
+import { getUIStrings } from '../utils/uiTranslations';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
@@ -29,7 +30,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   if (!isOpen) return null;
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar' || lang === 'ur';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ui = getUIStrings(lang);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -83,12 +85,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           <div>
             <h3 className="font-amiri text-xl font-bold text-[var(--gold2)] flex items-center gap-2">
               <Search className="w-5 h-5 text-[var(--gold)]" />
-              <span>{isRtl ? 'البحث الذكي في القرآن الكريم' : 'Smart Quran Search'}</span>
+              <span>{ui.smartSearchTitle}</span>
             </h3>
             <p className="text-[0.7rem] text-[var(--text3)] mt-0.5">
-              {isRtl
-                ? 'ابحث بدون تشكيل، وحتى لو كانت الكتابة بها أخطاء إملائية سنجد أقرب آية'
-                : 'Search without diacritics, with smart nearest-verse matching for typos'}
+              {ui.smartSearchPh}
             </p>
           </div>
           <button
@@ -108,7 +108,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={isRtl ? 'اكتب أي كلمة أو آية بدون تشكيل...' : 'Type words or verses without diacritics...'}
+              placeholder={ui.smartSearchPh}
               className="w-full bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] ps-10 pe-9 py-2.5 rounded-xl text-xs sm:text-sm outline-none focus:border-[var(--gold)] min-h-[42px]"
             />
             {query && (
@@ -126,7 +126,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             className="bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold px-5 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 cursor-pointer shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'بحث ذكي' : 'Search'}</span>
+            <span>{ui.smartSearchBtn}</span>
           </button>
         </form>
 
@@ -134,7 +134,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         {!hasSearched && (
           <div className="mb-3">
             <span className="text-[0.65rem] text-[var(--text3)] block mb-1.5">
-              {isRtl ? 'نماذج بحث سريعة:' : 'Quick search ideas:'}
+              {ui.smartSearchIdeas}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {SAMPLE_SEARCHES.map((chip, idx) => (
@@ -156,9 +156,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           <div className="mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 text-xs text-amber-300">
             <Sparkles className="w-4 h-4 shrink-0 text-amber-400" />
             <span>
-              {isRtl
-                ? '💡 تم العثور على أقرب الآيات تطابقاً مع ما كتبته (البحث التقريبي):'
-                : '💡 Nearest matching verses found based on similarity:'}
+              {ui.smartSearchClosestMatch}
             </span>
           </div>
         )}
@@ -168,16 +166,16 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {loading && (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-[var(--text2)]">
               <Loader2 className="w-7 h-7 animate-spin text-[var(--gold)]" />
-              <span className="text-xs">{isRtl ? 'جاري البحث الذكي ومطابقة الآيات...' : 'Searching Quran verses...'}</span>
+              <span className="text-xs">{ui.smartSearching}</span>
             </div>
           )}
 
           {!loading && hasSearched && results.length === 0 && (
             <div className="py-12 text-center text-xs text-[var(--text3)] space-y-2">
               <AlertCircle className="w-8 h-8 mx-auto text-[var(--text3)] opacity-60" />
-              <p>{isRtl ? 'لم نتمكن من العثور على آيات مطابقة للبحث.' : 'No matching verses found.'}</p>
+              <p>{ui.smartSearchNoResults}</p>
               <p className="text-[0.7rem]">
-                {isRtl ? 'جرب البحث بكلمة واحدة أو عبارة رئيسية من الآية.' : 'Try searching with a single key word.'}
+                {ui.smartSearchTip}
               </p>
             </div>
           )}
@@ -206,12 +204,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       </span>
                       {item.isNearestMatch && item.similarityScore && (
                         <span className="text-[0.62rem] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
-                          {isRtl ? `أقرب تطابق ${item.similarityScore}%` : `Closest match ${item.similarityScore}%`}
+                          {ui.smartSearchClosestMatch} {item.similarityScore}%
                         </span>
                       )}
                     </div>
                     <span className="text-[0.68rem] bg-[var(--gold)]/10 text-[var(--gold)] group-hover:bg-[var(--gold)] group-hover:text-black px-2.5 py-0.5 rounded-md font-semibold transition-colors flex items-center gap-1">
-                      <span>{isRtl ? 'فتح في المصحف' : 'Open in Quran'}</span>
+                      <span>{ui.smartSearchOpenQuran}</span>
                     </span>
                   </div>
 

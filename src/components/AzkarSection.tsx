@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { AZKAR } from '../data/azkar';
 import { TRANSLATIONS } from '../data/translations';
-import { Check, RotateCcw, Sparkles } from 'lucide-react';
+import { Check, RotateCcw, Sparkles, Shield, Sun, Moon, Sunset } from 'lucide-react';
+import { hapticFeedback } from '../utils/haptics';
 
 interface AzkarSectionProps {
   lang: string;
@@ -9,7 +10,8 @@ interface AzkarSectionProps {
 
 export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const [activeTab, setActiveTab] = useState<'sabah' | 'masa' | 'nawm'>('sabah');
+  const isRtl = lang === 'ar';
+  const [activeTab, setActiveTab] = useState<'sabah' | 'masa' | 'nawm' | 'ruqyah'>('sabah');
   const [userCounters, setUserCounters] = useState<Record<number, number>>({});
 
   const list = AZKAR[activeTab] || [];
@@ -19,9 +21,14 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
     if (current < maxCount) {
       const next = current + 1;
       setUserCounters((prev) => ({ ...prev, [idx]: next }));
-      if ('vibrate' in navigator) {
-        navigator.vibrate(20);
+
+      // Physical vibration feedback
+      if (next === maxCount) {
+        hapticFeedback.success();
+      } else {
+        hapticFeedback.tap();
       }
+
       // Record user activity
       const prevTotal = parseInt(localStorage.getItem('azkar_read') || '0', 10);
       localStorage.setItem('azkar_read', String(prevTotal + 1));
@@ -29,6 +36,7 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
   };
 
   const handleResetSection = () => {
+    hapticFeedback.warning();
     setUserCounters({});
   };
 
@@ -38,52 +46,71 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
   const pct = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
 
   return (
-    <div className="max-w-3xl mx-auto p-3.5 sm:p-6 pb-28 space-y-4 animate-fade-in">
+    <div className="max-w-3xl mx-auto p-3.5 sm:p-6 pb-28 space-y-4 animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Category Tabs */}
-      <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-1.5 flex gap-1.5 shadow-sm">
+      <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 shadow-sm">
         <button
           onClick={() => {
+            hapticFeedback.selection();
             setActiveTab('sabah');
             setUserCounters({});
           }}
-          className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'sabah'
               ? 'bg-[var(--gold)] text-black shadow-md'
               : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
           }`}
         >
-          <span>🌅</span>
+          <Sun className="w-4 h-4" />
           <span>{t.azkarSabah}</span>
         </button>
 
         <button
           onClick={() => {
+            hapticFeedback.selection();
             setActiveTab('masa');
             setUserCounters({});
           }}
-          className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'masa'
               ? 'bg-[var(--gold)] text-black shadow-md'
               : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
           }`}
         >
-          <span>🌇</span>
+          <Sunset className="w-4 h-4" />
           <span>{t.azkarMasa}</span>
         </button>
 
         <button
           onClick={() => {
+            hapticFeedback.selection();
             setActiveTab('nawm');
             setUserCounters({});
           }}
-          className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'nawm'
               ? 'bg-[var(--gold)] text-black shadow-md'
               : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
           }`}
         >
-          <span>🌙</span>
+          <Moon className="w-4 h-4" />
           <span>{t.azkarNawm}</span>
+        </button>
+
+        <button
+          onClick={() => {
+            hapticFeedback.selection();
+            setActiveTab('ruqyah');
+            setUserCounters({});
+          }}
+          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeTab === 'ruqyah'
+              ? 'bg-[var(--gold)] text-black shadow-md'
+              : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>{isRtl ? 'الرقية الشرعية' : 'Ruqyah Shariah'}</span>
         </button>
       </div>
 
@@ -93,7 +120,11 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
           <div className="flex items-center justify-between text-xs font-bold mb-1">
             <span className="text-[var(--gold2)] flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-[var(--gold)]" />
-              <span>{lang === 'ar' ? 'إنجاز أذكار هذه الجلسة' : 'Progress'}</span>
+              <span>
+                {activeTab === 'ruqyah'
+                  ? (isRtl ? 'إنجاز آيات وأدعية الرقية' : 'Ruqyah Progress')
+                  : (isRtl ? 'إنجاز أذكار هذه الجلسة' : 'Session Progress')}
+              </span>
             </span>
             <span className="text-[var(--gold)]">{pct}%</span>
           </div>

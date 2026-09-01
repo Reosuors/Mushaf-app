@@ -2,15 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { calculateQiblaDirection, calculateDistanceToKaaba, getCompassHeadingLabel, KAABA_COORDINATES } from '../utils/qibla';
 import { CITY_COORDINATES } from '../utils/prayerCalculator';
 import { TRANSLATIONS } from '../data/translations';
+import { getUIStrings } from '../utils/uiTranslations';
 import {
   Compass,
-  Navigation,
   MapPin,
-  Sparkles,
-  RotateCw,
   Sliders,
   CheckCircle2,
-  AlertCircle,
   Maximize2,
   Minimize2,
   LocateFixed,
@@ -33,7 +30,8 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
   onRefreshGps,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar' || lang === 'ur';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ui = getUIStrings(lang);
 
   // Effective Coordinates
   const effectiveCoords = userCoordinates ||
@@ -50,7 +48,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
   const [manualHeading, setManualHeading] = useState<number | null>(null);
   const [isManualMode, setIsManualMode] = useState<boolean>(false);
-  const [isCalibrating, setIsCalibrating] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const lastVibrateTime = useRef<number>(0);
@@ -58,9 +55,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
   // Current active heading (sensor or manual slider)
   const currentHeading = manualHeading !== null && isManualMode ? manualHeading : deviceHeading;
 
-  // The angle to rotate the compass dial so that 0 (North) faces real device North:
-  // When device turns by `currentHeading`, the compass dial must rotate by `-currentHeading`.
-  // The Kaaba indicator sits at `qiblaAngle` on the compass dial.
   // Relative offset: (qiblaAngle - currentHeading + 360) % 360
   const relativeQiblaAngle = (qiblaAngle - currentHeading + 360) % 360;
   
@@ -123,14 +117,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
       if ('webkitCompassHeading' in e && typeof (e as any).webkitCompassHeading === 'number') {
         heading = (e as any).webkitCompassHeading;
       } else if (e.alpha !== null && typeof e.alpha === 'number') {
-        // Android / Standard fallback:
-        // if absolute is true, alpha is relative to North (0-360 clockwise)
-        // Invert for rotation
-        if ((e as any).absolute) {
-          heading = (360 - e.alpha) % 360;
-        } else {
-          heading = (360 - e.alpha) % 360;
-        }
+        heading = (360 - e.alpha) % 360;
       }
 
       if (heading !== null && !isNaN(heading)) {
@@ -138,15 +125,12 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
       }
     };
 
-    if (window.DeviceOrientationEvent) {
-      // Try absolute orientation first (Chrome Android)
-      window.addEventListener('deviceorientationabsolute', handleOrientation as any, true);
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    } else {
-      setIsSensorSupported(false);
+    if ('ondeviceorientationabsolute' in window) {
+      (window as any).addEventListener('deviceorientationabsolute', handleOrientation);
+    } else if ('ondeviceorientation' in window) {
+      (window as any).addEventListener('deviceorientation', handleOrientation);
     }
 
-    // Timeout check if sensors are not available (e.g. desktop browsers)
     setTimeout(() => {
       if (!sensorFired) {
         setIsSensorSupported(false);
@@ -154,8 +138,8 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
     }, 1500);
 
     return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation as any);
-      window.removeEventListener('deviceorientation', handleOrientation);
+      (window as any).removeEventListener('deviceorientationabsolute', handleOrientation);
+      (window as any).removeEventListener('deviceorientation', handleOrientation);
     };
   };
 
@@ -186,11 +170,11 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-[var(--gold2)] flex items-center gap-1.5 font-amiri text-base">
-              <span>{t.qiblaCompass || 'بوصلة القبلة'}</span>
+              <span>{ui.qiblaTitle}</span>
               {isAligned && (
                 <span className="text-xs text-emerald-400 font-sans font-bold flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {isRtl ? 'باتجاه الكعبة!' : 'Facing Kaaba!'}
+                  {ui.qiblaFacingKaaba}
                 </span>
               )}
             </h3>
@@ -199,7 +183,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
               <span>
                 {city} {country ? `· ${country}` : ''}
               </span>
-              <span>· {distanceKm.toLocaleString()} {isRtl ? 'كم إلى مكة' : 'km to Mecca'}</span>
+              <span>· {distanceKm.toLocaleString()} {ui.qiblaKmToMecca}</span>
             </p>
           </div>
         </div>
@@ -213,7 +197,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
                 ? 'bg-[var(--gold)] text-black border-[var(--gold)] font-bold'
                 : 'bg-[var(--bg3)] text-[var(--text2)] border-[var(--border2)] hover:text-[var(--gold)]'
             }`}
-            title={isRtl ? 'التحكم اليدوي / محاكاة' : 'Manual / Simulation Mode'}
+            title={ui.qiblaManualSim}
           >
             <Sliders className="w-3.5 h-3.5" />
           </button>
@@ -222,7 +206,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
             <button
               onClick={onRefreshGps}
               className="p-2 rounded-xl bg-[var(--bg3)] text-[var(--text2)] border border-[var(--border2)] hover:text-[var(--gold)] hover:border-[var(--gold)] text-xs transition-all cursor-pointer"
-              title={isRtl ? 'تحديث الإحداثيات عبر GPS' : 'Update Coordinates via GPS'}
             >
               <LocateFixed className="w-3.5 h-3.5" />
             </button>
@@ -231,7 +214,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 rounded-xl bg-[var(--bg3)] text-[var(--text2)] border border-[var(--border2)] hover:text-[var(--gold)] text-xs transition-all cursor-pointer"
-            title={isExpanded ? (isRtl ? 'تصغير' : 'Minimize') : (isRtl ? 'تكبير' : 'Expand')}
           >
             {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
@@ -244,15 +226,13 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
         permissionGranted === null && (
           <div className="mb-4 p-3 rounded-2xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 flex items-center justify-between gap-3 text-xs">
             <span className="text-[var(--text)] text-[0.75rem]">
-              {isRtl
-                ? 'يرجى تفعيل مستشعر الاتجاه والبوصلة على هاتفك:'
-                : 'Enable device compass & orientation sensor:'}
+              {ui.qiblaEnableSensor}
             </span>
             <button
               onClick={requestOrientationPermission}
               className="px-3 py-1.5 bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold rounded-xl text-xs shadow-sm active:scale-95 cursor-pointer"
             >
-              {isRtl ? 'تفعيل البوصلة' : 'Enable Sensor'}
+              {ui.qiblaEnableSensor}
             </button>
           </div>
         )}
@@ -285,7 +265,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
             />
           </div>
 
-          {/* Rotating Compass Dial (Rotates opposite to device heading) */}
+          {/* Rotating Compass Dial */}
           <div
             className="w-full h-full rounded-full relative flex items-center justify-center transition-transform duration-150 ease-out"
             style={{
@@ -345,7 +325,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
                   }`}
                 >
                   <span>🕋</span>
-                  <span>{isRtl ? 'القبلة' : 'Qibla'}</span>
+                  <span>{ui.qiblaTitle}</span>
                 </div>
                 <div
                   className={`w-0.5 h-10 ${
@@ -357,7 +337,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
 
             {/* Inner Decorative Islamic Dial */}
             <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-full border border-[var(--gold)]/20 bg-[var(--bg2)]/60 flex items-center justify-center relative">
-              {/* Subtle 8-point geometric star overlay */}
               <div className="absolute inset-2 border border-[var(--gold)]/15 rotate-45 pointer-events-none" />
               <div className="absolute inset-2 border border-[var(--gold)]/15 pointer-events-none" />
 
@@ -392,12 +371,12 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
         {/* Live Alignment Distance & Bearing Text */}
         <div className="mt-4 text-center space-y-1">
           <div className="flex items-center justify-center gap-2 text-xs">
-            <span className="text-[var(--text3)]">{isRtl ? 'اتجاه القبلة:' : 'Qibla Bearing:'}</span>
+            <span className="text-[var(--text3)]">{ui.qiblaBearing}</span>
             <span className="font-bold text-[var(--gold)] font-sans">
               {Math.round(qiblaAngle)}° ({getCompassHeadingLabel(qiblaAngle, lang)})
             </span>
             <span className="text-[var(--text3)]">·</span>
-            <span className="text-[var(--text3)]">{isRtl ? 'الانحراف:' : 'Deviation:'}</span>
+            <span className="text-[var(--text3)]">{ui.qiblaDeviation}</span>
             <span
               className={`font-bold font-sans ${
                 isAligned ? 'text-emerald-400' : 'text-amber-400'
@@ -410,7 +389,7 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
           <p className="text-[0.68rem] text-[var(--text3)]">
             {isAligned ? (
               <span className="text-emerald-400 font-bold">
-                ✓ {isRtl ? 'أنت الآن في الاتجاه الصحيح تماماً نحو الكعبة المشرفة' : 'You are now facing directly towards the Holy Kaaba'}
+                ✓ {ui.qiblaCorrectDirection}
               </span>
             ) : (
               <span>
@@ -427,13 +406,13 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
         </div>
       </div>
 
-      {/* Manual Heading Slider (For testing or desktop environments without magnetometer) */}
+      {/* Manual Heading Slider */}
       {isManualMode && (
         <div className="mt-4 p-3.5 rounded-2xl bg-[var(--bg3)] border border-[var(--border2)] space-y-2 animate-fade-in text-xs">
           <div className="flex items-center justify-between text-[var(--text2)]">
             <span className="font-semibold flex items-center gap-1">
               <Sliders className="w-3.5 h-3.5 text-[var(--gold)]" />
-              <span>{isRtl ? 'محاكاة تدوير الجهاز يدوياً:' : 'Manual Device Heading Slider:'}</span>
+              <span>{ui.qiblaManualSlider}</span>
             </span>
             <span className="font-bold font-mono text-[var(--gold)]">
               {manualHeading !== null ? manualHeading : deviceHeading}°
@@ -447,13 +426,6 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
             onChange={(e) => setManualHeading(parseInt(e.target.value, 10))}
             className="w-full accent-[var(--gold)] cursor-pointer"
           />
-          <div className="flex justify-between text-[0.65rem] text-[var(--text3)]">
-            <span>0° (N)</span>
-            <span>90° (E)</span>
-            <span>180° (S)</span>
-            <span>270° (W)</span>
-            <span>360°</span>
-          </div>
         </div>
       )}
 
@@ -461,29 +433,29 @@ export const QiblaCompass: React.FC<QiblaCompassProps> = ({
       {isExpanded && (
         <div className="mt-4 pt-3 border-t border-[var(--border2)] grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs animate-fade-in">
           <div className="p-2.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)]">
-            <div className="text-[0.65rem] text-[var(--text3)]">{isRtl ? 'إحداثياتك' : 'Your Coordinates'}</div>
+            <div className="text-[0.65rem] text-[var(--text3)]">{ui.qiblaCoordinates}</div>
             <div className="font-mono font-bold text-[var(--text)] text-[0.72rem] mt-0.5">
               {effectiveCoords.lat.toFixed(4)}°, {effectiveCoords.lng.toFixed(4)}°
             </div>
           </div>
 
           <div className="p-2.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)]">
-            <div className="text-[0.65rem] text-[var(--text3)]">{isRtl ? 'إحداثيات الكعبة' : 'Kaaba Coordinates'}</div>
+            <div className="text-[0.65rem] text-[var(--text3)]">{ui.qiblaKaabaCoords}</div>
             <div className="font-mono font-bold text-[var(--text)] text-[0.72rem] mt-0.5">
               {KAABA_COORDINATES.lat.toFixed(4)}°, {KAABA_COORDINATES.lng.toFixed(4)}°
             </div>
           </div>
 
           <div className="p-2.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] col-span-2 sm:col-span-1">
-            <div className="text-[0.65rem] text-[var(--text3)]">{isRtl ? 'حالة الحساس' : 'Sensor Status'}</div>
+            <div className="text-[0.65rem] text-[var(--text3)]">{ui.qiblaSensorStatus}</div>
             <div className="font-bold text-[var(--gold)] text-[0.72rem] mt-0.5 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>
                 {isManualMode
-                  ? isRtl ? 'محاكاة يدوية' : 'Manual'
+                  ? ui.qiblaManualSim
                   : isSensorSupported
-                  ? isRtl ? 'حساس مغناطيسي نشط' : 'Magnetometer Active'
-                  : isRtl ? 'غير متاح (محاكاة)' : 'Desktop/Simulated'}
+                  ? ui.qiblaSensorActive
+                  : ui.qiblaSimulated}
               </span>
             </div>
           </div>

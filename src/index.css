@@ -35,11 +35,23 @@ html, body, #root {
 }
 
 .font-quran {
-  font-family: 'Amiri Quran', 'Amiri', serif;
+  font-family: 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Noto Naskh Arabic', serif;
+  font-feature-settings: "cv01" 1, "cv02" 1, "calt" 1, "liga" 1, "mkmk" 1, "mark" 1;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-amiri {
-  font-family: 'Amiri', serif;
+  font-family: 'Amiri', 'Amiri Quran', serif;
+}
+
+.font-scheherazade {
+  font-family: 'Scheherazade New', 'Amiri Quran', serif;
+}
+
+.font-naskh {
+  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
 }
 
 /* Custom Scrollbar */
@@ -127,11 +139,6 @@ input[type=range]::-webkit-slider-thumb {
   50% { box-shadow: 0 0 0 16px rgba(201, 76, 76, 0); }
 }
 
-@keyframes fabPop {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 .flash-highlight {
   animation: flashA 1.2s ease;
 }
@@ -160,7 +167,119 @@ input[type=range]::-webkit-slider-thumb {
   animation: micPulse 1.1s ease-in-out infinite;
 }
 
-/* Distinctive Islamic Geometric & Gold Effects */
+/* ==========================================================================
+   SITE DESIGN & STRUCTURAL LAYOUTS
+   ========================================================================== */
+
+/* 1. Classic Ornate Mushaf (المصحف التراثي المذهب الأندلسي) */
+[data-design-style="mushaf_classic"] {
+  --radius: 8px;
+}
+[data-design-style="mushaf_classic"] .rounded-2xl,
+[data-design-style="mushaf_classic"] .rounded-3xl {
+  border-radius: 12px !important;
+  border-width: 2px !important;
+  border-style: double !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), inset 0 0 14px rgba(201, 168, 76, 0.06) !important;
+}
+[data-design-style="mushaf_classic"] .font-quran {
+  font-family: 'Amiri Quran', serif !important;
+  letter-spacing: 0.6px;
+}
+
+/* 2. Sidebar Dashboard Layout (اللوحة الشاملة والشريط الجانبي) */
+[data-design-style="sidebar_dashboard"] {
+  --radius: 16px;
+}
+[data-design-style="sidebar_dashboard"] .app-main-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+[data-design-style="sidebar_dashboard"] .rounded-2xl,
+[data-design-style="sidebar_dashboard"] .rounded-3xl {
+  border-radius: 16px !important;
+}
+
+/* 3. Neo-Glass Luxury Floating Island (الزجاجي الفاخر) */
+[data-design-style="neo_glass"] {
+  --radius: 26px;
+}
+[data-design-style="neo_glass"] .rounded-2xl,
+[data-design-style="neo_glass"] .rounded-3xl,
+[data-design-style="neo_glass"] .rounded-xl {
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 10px 35px 0 rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(201, 168, 76, 0.25) !important;
+}
+
+/* 4. Split Portal Hub (البوابة المقسمة المزدوجة) */
+[data-design-style="portal_hub"] {
+  --radius: 14px;
+}
+
+/* 5. Minimalist Pure Focus (التبسيطي الصافي) */
+[data-design-style="minimalist"] {
+  --radius: 4px;
+}
+[data-design-style="minimalist"] .rounded-2xl,
+[data-design-style="minimalist"] .rounded-3xl,
+[data-design-style="minimalist"] .rounded-xl {
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  border-width: 1px !important;
+  border-color: var(--border2) !important;
+}
+[data-design-style="minimalist"] button {
+  border-radius: 4px !important;
+}
+
+/* 6. Royal Islamic Arches (المحاريب والقباب الملكية) */
+[data-design-style="royal_arches"] {
+  --radius: 20px;
+}
+[data-design-style="royal_arches"] .rounded-2xl,
+[data-design-style="royal_arches"] .rounded-3xl {
+  border-radius: 28px 28px 14px 14px !important;
+  border-top: 3px solid var(--gold) !important;
+  box-shadow: 0 12px 30px -5px rgba(201, 168, 76, 0.18) !important;
+}
+
+/* 7. Top Navigation Bar (الشريط العلوي المدمج) */
+[data-design-style="top_navbar"] {
+  --radius: 16px;
+}
+
+/* 8. Side Hamburger Drawer (القائمة الجانبية المنزلقة) */
+[data-design-style="drawer_menu"] {
+  --radius: 18px;
+}
+
+/* 9. Radical Bento & Modular Grid (الشبكة البنتو الشاملة والترتيب المغاير) */
+[data-design-style="radical_bento_grid"] {
+  --radius: 20px;
+}
+[data-design-style="radical_bento_grid"] .grid-bento-card {
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%) !important;
+  border-width: 1.5px !important;
+  border-color: rgba(201, 168, 76, 0.25) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+[data-design-style="radical_bento_grid"] .grid-bento-hero {
+  grid-column: 1 / -1;
+  background: radial-gradient(circle at top right, rgba(201, 168, 76, 0.12), transparent 70%), var(--bg2) !important;
+}
+
+/* 10. Modern Default (الحديث العصري) */
+[data-design-style="modern"] {
+  --radius: 16px;
+}
+
+/* Distinctive Gold Glow */
 .text-glow {
   text-shadow: 0 0 16px rgba(201, 168, 76, 0.35), 0 0 32px rgba(201, 168, 76, 0.15);
 }

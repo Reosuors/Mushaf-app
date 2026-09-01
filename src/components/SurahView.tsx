@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SURAHS } from '../data/surahs';
-import { Reciter, AyahData } from '../types';
+import { Reciter, AyahData, QuranFontId, AyahCardData } from '../types';
 import { TRANSLATIONS } from '../data/translations';
+import { QURAN_FONTS } from '../data/designStyles';
 import { normalizeArabic } from '../utils/quranSearch';
 import { 
   getSurahOffline, 
@@ -15,6 +16,7 @@ import {
   loadReadingProgress,
   toggleSurahCompletion,
 } from '../utils/readingProgress';
+import { hapticFeedback } from '../utils/haptics';
 import {
   ArrowLeft,
   ArrowRight,
@@ -39,6 +41,9 @@ import {
   CheckSquare,
   Award,
   ScrollText,
+  Image as ImageIcon,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 interface SurahViewProps {
@@ -49,12 +54,14 @@ interface SurahViewProps {
   selectedReciter: Reciter | null;
   currentPlayingAyah: number | null;
   isPlaying: boolean;
+  currentQuranFont?: QuranFontId;
   onBack: () => void;
   onSelectReciter: (reciter: Reciter) => void;
   onPlaySurah: (surahNumber: number) => void;
   onPlayAyah: (surahNumber: number, ayahNumber: number) => void;
   onOpenRepeatModal: (surahNumber: number) => void;
   onOpenTafsir: (surahNumber: number, ayahNumber: number, text: string) => void;
+  onOpenAyahCard?: (ayahData: AyahCardData) => void;
 }
 
 export const SurahView: React.FC<SurahViewProps> = ({
@@ -65,12 +72,14 @@ export const SurahView: React.FC<SurahViewProps> = ({
   selectedReciter,
   currentPlayingAyah,
   isPlaying,
+  currentQuranFont = 'amiri_quran',
   onBack,
   onSelectReciter,
   onPlaySurah,
   onPlayAyah,
   onOpenRepeatModal,
   onOpenTafsir,
+  onOpenAyahCard,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
@@ -91,9 +100,15 @@ export const SurahView: React.FC<SurahViewProps> = ({
   const [fontSize, setFontSize] = useState<number>(() => {
     return parseInt(localStorage.getItem('quran_font_size') || '26', 10);
   });
+  const [selectedFont, setSelectedFont] = useState<QuranFontId>(() => {
+    return (localStorage.getItem('quran_font_family') as QuranFontId) || currentQuranFont || 'amiri_quran';
+  });
   const [viewMode, setViewMode] = useState<'verse' | 'continuous'>('verse');
   const [filterQuery, setFilterQuery] = useState('');
   const [jumpAyah, setJumpAyah] = useState('');
+
+  const activeFontConfig = QURAN_FONTS.find((f) => f.id === selectedFont) || QURAN_FONTS[0];
+  const quranFontFamily = activeFontConfig.fontFamily;
 
   const surahInfo恒 = SURAHS.find((s) => s.n === surahNumber) || SURAHS[0];
   const surahInfo = surahInfo恒;
@@ -117,23 +132,27 @@ export const SurahView: React.FC<SurahViewProps> = ({
   }, [surahNumber]);
 
   const handleToggleBookmark = (ayahNum: number, text?: string) => {
+    hapticFeedback.medium();
     toggleBookmark(surahNumber, ayahNum, surahInfo.ar, surahInfo.en, text);
     updateLastReadPosition(surahNumber, ayahNum, surahInfo.ar, surahInfo.en);
     refreshProgress();
   };
 
   const handleMarkAyahRead = (ayahNum: number) => {
+    hapticFeedback.light();
     updateLastReadPosition(surahNumber, ayahNum, surahInfo.ar, surahInfo.en);
     refreshProgress();
   };
 
   const handleToggleSurahCompletion = () => {
+    hapticFeedback.success();
     const isNowComplete = toggleSurahCompletion(surahNumber, surahInfo.a);
     setIsSurahCompleted(isNowComplete);
     refreshProgress();
   };
 
   const handleFontSize = (delta: number) => {
+    hapticFeedback.selection();
     setFontSize((prev) => {
       const next = Math.max(18, Math.min(46, prev + delta));
       localStorage.setItem('quran_font_size', String(next));
@@ -241,6 +260,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
   const handleJump = () => {
     const target地理 = parseInt(jumpAyah, 10);
     if (!isNaN(target地理) && target地理 >= 1 && target地理 <= (surahInfo?.a || 1)) {
+      hapticFeedback.navigation();
       ayahRefs.current[target地理]?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
@@ -265,7 +285,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
       {/* Top Navigation Bar */}
       <div className="bg-[var(--bg2)]/95 border border-[var(--border2)] rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm sticky top-2 z-20 backdrop-blur-md">
         <button
-          onClick={onBack}
+          onClick={() => {
+            hapticFeedback.navigation();
+            onBack();
+          }}
           className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--gold)] hover:text-[var(--gold2)] active:scale-95 transition-all cursor-pointer bg-[var(--bg3)] border border-[var(--border2)] px-3 py-1.5 rounded-xl shadow-xs"
         >
           {isRtl ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
@@ -299,7 +322,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
         <div className="flex items-center gap-1.5">
           {!isDownloaded && (
             <button
-              onClick={handleDownloadSurah}
+              onClick={() => {
+                hapticFeedback.tap();
+                handleDownloadSurah();
+              }}
               disabled={downloadingNow}
               className="p-2 rounded-xl bg-[var(--bg3)] hover:bg-[var(--gold)]/20 border border-[var(--border2)] text-[var(--gold)] text-xs cursor-pointer transition-all active:scale-95"
               title={isRtl ? 'تحميل السورة للعمل بدون إنترنت' : 'Download surah offline'}
@@ -311,7 +337,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
           {/* Explicit Mode Switcher in Header */}
           <div className="flex items-center bg-[var(--bg3)] border border-[var(--border2)] p-1 rounded-xl gap-0.5">
             <button
-              onClick={() => setViewMode('verse')}
+              onClick={() => {
+                hapticFeedback.toggle();
+                setViewMode('verse');
+              }}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'verse'
                   ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-xs'
@@ -324,7 +353,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
             </button>
 
             <button
-              onClick={() => setViewMode('continuous')}
+              onClick={() => {
+                hapticFeedback.toggle();
+                setViewMode('continuous');
+              }}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'continuous'
                   ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-xs'
@@ -381,25 +413,45 @@ export const SurahView: React.FC<SurahViewProps> = ({
           </button>
         </div>
 
-        {/* Font size controller & Quick jump */}
+        {/* Font size controller, Quran Font Picker & Quick jump */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border2)]/50 text-xs">
-          {/* Font scaler */}
-          <div className="flex items-center gap-2">
+          {/* Font scaler & Font Family switcher */}
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[var(--text3)] flex items-center gap-1">
               <Type className="w-3.5 h-3.5" />
-              <span>{isRtl ? 'حجم الخط:' : 'Font size:'}</span>
+              <span>{isRtl ? 'الخط والحجم:' : 'Font & Size:'}</span>
             </span>
+
+            {/* Quick Quran Font Switcher */}
+            <select
+              value={selectedFont}
+              onChange={(e) => {
+                const nextFont = e.target.value as QuranFontId;
+                setSelectedFont(nextFont);
+                localStorage.setItem('quran_font_family', nextFont);
+              }}
+              className="bg-[var(--bg2)] border border-[var(--border2)] text-[var(--gold)] text-xs rounded-lg px-2 py-1 outline-none focus:border-[var(--gold)] cursor-pointer"
+            >
+              {QURAN_FONTS.map((f) => (
+                <option key={f.id} value={f.id} className="bg-[var(--bg2)] text-[var(--text)]">
+                  {isRtl ? f.nameAr : f.nameEn}
+                </option>
+              ))}
+            </select>
+
             <div className="flex items-center gap-1 bg-[var(--bg2)] border border-[var(--border2)] rounded-lg p-0.5">
               <button
                 onClick={() => handleFontSize(-2)}
                 className="w-7 h-7 rounded hover:bg-[var(--bg3)] text-[var(--text2)] font-bold active:scale-95 cursor-pointer"
+                title="تصغير الخط"
               >
                 -
               </button>
-              <span className="w-8 text-center font-bold text-[var(--gold)]">{fontSize}</span>
+              <span className="w-7 text-center font-bold text-[var(--gold)]">{fontSize}</span>
               <button
                 onClick={() => handleFontSize(2)}
                 className="w-7 h-7 rounded hover:bg-[var(--bg3)] text-[var(--text2)] font-bold active:scale-95 cursor-pointer"
+                title="تكبير الخط"
               >
                 +
               </button>
@@ -541,7 +593,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
       {/* Bismillah Header (except for Surah At-Tawbah 9) */}
       {surahNumber !== 9 && surahNumber !== 1 && (
         <div className="my-6 text-center">
-          <div className="font-quran text-2xl sm:text-3xl text-[var(--gold2)] dir-rtl select-none tracking-wide text-glow">
+          <div
+            className="font-quran text-2xl sm:text-3xl text-[var(--gold2)] dir-rtl select-none tracking-wide text-glow"
+            style={{ fontFamily: quranFontFamily }}
+          >
             بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
           </div>
         </div>
@@ -573,7 +628,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
         <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-3xl p-6 sm:p-8 shadow-xl leading-loose">
           <div
             className="font-quran text-justify dir-rtl select-text"
-            style={{ fontSize: `${fontSize}px`, lineHeight: 2.5 }}
+            style={{ fontSize: `${fontSize}px`, lineHeight: 2.5, fontFamily: quranFontFamily }}
           >
             {ayahs.map((ayah) => {
               const isCurrent = currentPlayingAyah === ayah.numberInSurah;
@@ -591,6 +646,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
                       ? 'bg-[var(--gold)]/25 text-[var(--gold2)] shadow-sm font-bold'
                       : 'hover:text-[var(--gold)] text-[var(--text)]'
                   }`}
+                  style={{ fontFamily: quranFontFamily }}
                 >
                   {displayText}{' '}
                   <span className="font-sans text-[0.7em] text-[var(--gold)] font-bold inline-block mx-1 select-none">
@@ -679,14 +735,31 @@ export const SurahView: React.FC<SurahViewProps> = ({
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                     </button>
+
+                    {onOpenAyahCard && (
+                      <button
+                        onClick={() =>
+                          onOpenAyahCard({
+                            surahNumber,
+                            surahNameAr: surahInfo.ar,
+                            ayahNumber: ayah.numberInSurah,
+                            ayahText: displayText,
+                          })
+                        }
+                        className="p-1.5 rounded-lg bg-[var(--bg3)] text-[var(--gold2)] hover:bg-[var(--gold)]/10 transition-all cursor-pointer"
+                        title={isRtl ? 'تصميم ومشاركة بطاقة الآية' : 'Generate Ayah Card'}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Ayah Text with Dynamic Font Size */}
+                {/* Ayah Text with Authentic Quran Font & Dynamic Font Size */}
                 <div
                   onClick={() => handleMarkAyahRead(ayah.numberInSurah)}
                   className="font-quran text-right dir-rtl leading-[2.4] text-[var(--text)] select-text cursor-pointer"
-                  style={{ fontSize: `${fontSize}px` }}
+                  style={{ fontSize: `${fontSize}px`, fontFamily: quranFontFamily }}
                 >
                   {displayText}
                 </div>

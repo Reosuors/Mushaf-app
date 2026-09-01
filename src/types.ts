@@ -144,7 +144,73 @@ export interface TafsirState {
   ayahArabicText: string;
   tafsirText: string;
   sourceSlug: string;
+  editionIdentifier?: string;
   isLoading: boolean;
+}
+
+export type DesignStyleId =
+  | 'modern'
+  | 'top_navbar'
+  | 'drawer_menu'
+  | 'sidebar_dashboard'
+  | 'mushaf_classic';
+
+export interface KhatmahPlan {
+  id: string;
+  name: string;
+  targetDays: number;
+  startDate: string; // ISO string
+  completedAyahs: number; // cumulative or current Surah/Ayah progress
+  currentSurah: number;
+  currentAyah: number;
+  dailyGoalPages: number;
+  lastReadDate: string;
+  completedDates: string[]; // ['2026-09-01', ...]
+  isFinished: boolean;
+}
+
+export interface AyahCardData {
+  surahNumber: number;
+  surahNameAr: string;
+  ayahNumber: number;
+  ayahText: string;
+  translationText?: string;
+  tafsirText?: string;
+}
+
+export type QuranFontId =
+  | 'amiri_quran'
+  | 'scheherazade'
+  | 'noto_naskh'
+  | 'reem_kufi'
+  | 'amiri';
+
+export interface QuranFontConfig {
+  id: QuranFontId;
+  nameAr: string;
+  nameEn: string;
+  fontFamily: string;
+  descAr: string;
+}
+
+export interface DesignStyleConfig {
+  id: DesignStyleId;
+  nameAr: string;
+  nameEn: string;
+  descAr: string;
+  descEn: string;
+  badgeAr: string;
+  badgeEn: string;
+  icon: string;
+}
+
+export interface TafsirEdition {
+  id: string;
+  name: string;
+  author: string;
+  language: string;
+  isTafsir: boolean;
+  direction?: 'rtl' | 'ltr';
 }
 
 export interface DownloadProgress {

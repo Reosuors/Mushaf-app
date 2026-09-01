@@ -7,22 +7,19 @@ import {
   calculateQuranCompletionPercentage,
   TOTAL_QURAN_AYAHS,
   TOTAL_QURAN_SURAHS,
-  BookmarkItem,
 } from '../utils/readingProgress';
 import { TRANSLATIONS } from '../data/translations';
+import { getUIStrings } from '../utils/uiTranslations';
 import {
   BookOpen,
   Bookmark,
   Award,
   Flame,
-  CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  Calendar,
   Target,
   Sparkles,
   Play,
-  RotateCcw,
   Trash2,
 } from 'lucide-react';
 
@@ -40,12 +37,11 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
   onSelectBookmark,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar' || lang === 'ur';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ui = getUIStrings(lang);
 
   const [progress, setProgress] = useState<ReadingProgressData>(loadReadingProgress());
   const [activeTab, setActiveTab] = useState<'overview' | 'bookmarks'>('overview');
-  const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [tempGoal, setTempGoal] = useState(progress.dailyGoalAyahs || 20);
 
   const handleNavigate = (surahNumber: number, ayahNumber: number) => {
     if (typeof onResumeReading === 'function') {
@@ -69,13 +65,6 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
   const completionPercentage = calculateQuranCompletionPercentage(progress);
   const completedSurahsCount = progress.completedSurahs.length;
 
-  const handleGoalSave = () => {
-    const updated = { ...progress, dailyGoalAyahs: Math.max(1, tempGoal) };
-    saveReadingProgress(updated);
-    setProgress(updated);
-    setIsEditingGoal(false);
-  };
-
   const handleDeleteBookmark = (bmId: string) => {
     const updated = {
       ...progress,
@@ -95,13 +84,13 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-[var(--gold2)] font-amiri flex items-center gap-1.5">
-              <span>{isRtl ? 'تقدم القراءة والختمة' : 'Reading Progress & Khatma'}</span>
+              <span>{t.navQuran || 'Quran'} · {ui.khatmas}</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-sans font-bold">
                 {completionPercentage}%
               </span>
             </h3>
             <p className="text-[0.68rem] text-[var(--text3)]">
-              {totalReadAyahs.toLocaleString()} / {TOTAL_QURAN_AYAHS.toLocaleString()} {isRtl ? 'آية مقروءة' : 'Ayahs read'}
+              {totalReadAyahs.toLocaleString()} / {TOTAL_QURAN_AYAHS.toLocaleString()} {ui.ayahsUnit}
             </p>
           </div>
         </div>
@@ -116,7 +105,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                 : 'text-[var(--text2)] hover:text-[var(--gold)]'
             }`}
           >
-            {isRtl ? 'التقدم' : 'Progress'}
+            {t.progress || 'Progress'}
           </button>
           <button
             onClick={() => setActiveTab('bookmarks')}
@@ -127,7 +116,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             }`}
           >
             <Bookmark className="w-3 h-3" />
-            <span>{isRtl ? 'العلامات' : 'Bookmarks'}</span>
+            <span>{ui.bookmarks}</span>
             {progress.bookmarks.length > 0 && (
               <span className="text-[0.62rem] px-1.5 py-0.2 rounded-full bg-black/20 text-current">
                 {progress.bookmarks.length}
@@ -148,11 +137,11 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="text-[0.65rem] text-[var(--text3)] uppercase font-semibold">
-                    {isRtl ? 'آخر موضع قراءة' : 'Last Read Position'}
+                    {ui.lastReadPos}
                   </div>
                   <div className="text-sm sm:text-base font-bold text-[var(--gold2)] truncate font-amiri">
-                    {isRtl ? `سورة ${progress.lastRead.surahNameAr}` : `Surah ${progress.lastRead.surahNameEn}`}{' '}
-                    · {isRtl ? `الآية ${progress.lastRead.ayahNumber}` : `Ayah ${progress.lastRead.ayahNumber}`}
+                    {t.surahWord} {isRtl ? progress.lastRead.surahNameAr : progress.lastRead.surahNameEn}{' '}
+                    · {t.ayah} {progress.lastRead.ayahNumber}
                   </div>
                 </div>
               </div>
@@ -163,7 +152,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                 }
                 className="bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition-all shrink-0 cursor-pointer"
               >
-                <span>{isRtl ? 'متابعة' : 'Resume'}</span>
+                <span>{ui.resume}</span>
                 {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -174,7 +163,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             <div className="flex items-center justify-between text-xs">
               <span className="text-[var(--text2)] font-semibold flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--gold)]" />
-                <span>{isRtl ? 'نسبة إنجاز المصحف الشريف:' : 'Overall Quran Completion:'}</span>
+                <span>{ui.quranCompletion}</span>
               </span>
               <span className="font-bold font-sans text-[var(--gold)]">{completionPercentage}%</span>
             </div>
@@ -187,8 +176,8 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             </div>
 
             <div className="flex justify-between text-[0.65rem] text-[var(--text3)] pt-1">
-              <span>{completedSurahsCount} / {TOTAL_QURAN_SURAHS} {isRtl ? 'سورة مكتملة' : 'Surahs completed'}</span>
-              <span>{TOTAL_QURAN_AYAHS - totalReadAyahs} {isRtl ? 'آية متبقية' : 'Ayahs remaining'}</span>
+              <span>{completedSurahsCount} / {TOTAL_QURAN_SURAHS} {ui.surahsCompleted}</span>
+              <span>{TOTAL_QURAN_AYAHS - totalReadAyahs} {ui.ayahsRemaining}</span>
             </div>
           </div>
 
@@ -198,13 +187,13 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             <div className="bg-[var(--bg3)] border border-[var(--border2)] rounded-2xl p-3 flex flex-col items-center justify-between">
               <div className="flex items-center gap-1 text-[var(--text3)] text-[0.65rem] font-bold uppercase">
                 <Target className="w-3 h-3 text-[var(--gold)]" />
-                <span>{isRtl ? 'ورد اليوم' : 'Daily Goal'}</span>
+                <span>{ui.dailyGoal}</span>
               </div>
               <div className="my-1.5">
                 <div className="text-base sm:text-lg font-bold font-sans text-[var(--gold2)]">
                   {progress.todayReadAyahs || 0} / {progress.dailyGoalAyahs || 20}
                 </div>
-                <div className="text-[0.6rem] text-[var(--text3)]">{isRtl ? 'آية' : 'Ayahs'}</div>
+                <div className="text-[0.6rem] text-[var(--text3)]">{ui.ayahsUnit}</div>
               </div>
               <div className="w-full bg-[var(--bg)] h-1.5 rounded-full overflow-hidden">
                 <div
@@ -223,30 +212,30 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             <div className="bg-[var(--bg3)] border border-[var(--border2)] rounded-2xl p-3 flex flex-col items-center justify-between">
               <div className="flex items-center gap-1 text-[var(--text3)] text-[0.65rem] font-bold uppercase">
                 <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span>{isRtl ? 'الاستمرار' : 'Streak'}</span>
+                <span>{ui.streak}</span>
               </div>
               <div className="my-1.5">
                 <div className="text-base sm:text-lg font-bold font-sans text-amber-400">
                   {progress.streakDays || 1}
                 </div>
-                <div className="text-[0.6rem] text-[var(--text3)]">{isRtl ? 'أيام متتالية' : 'Days'}</div>
+                <div className="text-[0.6rem] text-[var(--text3)]">{ui.daysUnit}</div>
               </div>
-              <span className="text-[0.6rem] text-amber-500/90 font-bold">{isRtl ? 'حافظ على وردك' : 'Keep it up!'}</span>
+              <span className="text-[0.6rem] text-amber-500/90 font-bold">{ui.keepItUp}</span>
             </div>
 
             {/* Completed Khatmas */}
             <div className="bg-[var(--bg3)] border border-[var(--border2)] rounded-2xl p-3 flex flex-col items-center justify-between">
               <div className="flex items-center gap-1 text-[var(--text3)] text-[0.65rem] font-bold uppercase">
                 <Award className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{isRtl ? 'الختمات' : 'Khatmas'}</span>
+                <span>{ui.khatmas}</span>
               </div>
               <div className="my-1.5">
                 <div className="text-base sm:text-lg font-bold font-sans text-emerald-400">
                   {progress.khatmaCount || 0}
                 </div>
-                <div className="text-[0.6rem] text-[var(--text3)]">{isRtl ? 'ختمة تامة' : 'Completed'}</div>
+                <div className="text-[0.6rem] text-[var(--text3)]">{ui.completedKhatma}</div>
               </div>
-              <span className="text-[0.6rem] text-emerald-400/90 font-bold">{isRtl ? 'تقبل الله' : 'MashaAllah'}</span>
+              <span className="text-[0.6rem] text-emerald-400/90 font-bold">{ui.mashaAllah}</span>
             </div>
           </div>
         </div>
@@ -259,9 +248,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
             <div className="text-center py-8 text-[var(--text3)] text-xs space-y-2">
               <Bookmark className="w-8 h-8 mx-auto text-[var(--text3)]/50" />
               <p>
-                {isRtl
-                  ? 'لم تقم بحفظ أي علامات مرجعية بعد. اضغط على أيقونة الإشارة المرجعية بجانب أي آية لحفظها.'
-                  : 'No bookmarks saved yet. Click the bookmark icon next to any verse to save it.'}
+                {ui.bookmarks}
               </p>
             </div>
           ) : (
@@ -273,10 +260,10 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[var(--gold2)] font-amiri">
-                      {isRtl ? `سورة ${bm.surahNameAr}` : `Surah ${bm.surahNameEn}`}
+                      {t.surahWord} {isRtl ? bm.surahNameAr : bm.surahNameEn}
                     </span>
                     <span className="text-[0.65rem] px-2 py-0.5 rounded-md bg-[var(--gold)]/10 text-[var(--gold)] font-sans font-bold">
-                      {isRtl ? `آية ${bm.ayahNumber}` : `Ayah ${bm.ayahNumber}`}
+                      {t.ayah} {bm.ayahNumber}
                     </span>
                   </div>
                   {bm.textSnippet && (
@@ -290,7 +277,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                   <button
                     onClick={() => handleNavigate(bm.surahNumber, bm.ayahNumber)}
                     className="p-2 rounded-xl bg-[var(--gold)]/15 text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-all cursor-pointer"
-                    title={isRtl ? 'انتقل إلى الآية' : 'Go to Ayah'}
+                    title={ui.goToAyah}
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
                   </button>
@@ -298,7 +285,7 @@ export const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
                   <button
                     onClick={() => handleDeleteBookmark(bm.id)}
                     className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
-                    title={isRtl ? 'حذف العلامة' : 'Delete Bookmark'}
+                    title={ui.deleteBookmark}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

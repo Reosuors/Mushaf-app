@@ -22,7 +22,15 @@ import {
   EyeOff,
   FastForward,
   Award,
+  AlertTriangle,
+  BookOpen,
+  VolumeX,
 } from 'lucide-react';
+import {
+  evaluateRecitationWithAutoCorrection,
+  RecitationEvaluationResult,
+  removeTashkeelAndQuranMarks,
+} from '../utils/arabicRecitationCorrection';
 
 interface MemTestSectionProps {
   lang: string;
@@ -52,14 +60,12 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
   const [loadingAyahs, setLoadingAyahs] = useState<boolean>(false);
 
   // Active Ayah Index
-  const [currentAyahIndex, setCurrentAyahIndex] = useState<number>(0); // 0-based in surahAyahs
+  const [currentAyahIndex, setCurrentAyahIndex] = useState<number>(0);
   const [userSubmission, setUserSubmission] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
 
-  // Evaluation & Results
-  const [evaluated, setEvaluated] = useState<boolean>(false);
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
-  const [similarity, setSimilarity] = useState<number>(0);
+  // Detailed Evaluation & Auto-Correction Result
+  const [evaluationResult, setEvaluationResult] = useState<RecitationEvaluationResult | null>(null);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [streak, setStreak] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
@@ -73,37 +79,6 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
   const autoAdvanceTimerRef = useRef<any>(null);
 
   const curSurahInfo = SURAHS.find((s) => s.n === selectedSurah) || SURAHS[0];
-
-  // Helper to normalize Arabic strings for forgiving speech recognition
-  const normalizeArabic = (text: string) => {
-    return text
-      .replace(/([^\u0621-\u063A\u0641-\u064A\u0660-\u0669a-zA-Z0-9])/g, '')
-      .replace(/[أإآ]/g, 'ا')
-      .replace(/[ة]/g, 'ه')
-      .replace(/[ى]/g, 'ي')
-      .replace(/[\u064B-\u065F\u0670]/g, '') // Tashkeel
-      .trim();
-  };
-
-  // Compute similarity score between 0 and 100
-  const computeSimilarity = (userText: string, expectedText: string) => {
-    const s1 = normalizeArabic(userText);
-    const s2 = normalizeArabic(expectedText);
-    if (!s1 || !s2) return 0;
-    if (s1 === s2) return 100;
-
-    const words1 = s1.split(/\s+/).filter(Boolean);
-    const words2 = s2.split(/\s+/).filter(Boolean);
-
-    let matches = 0;
-    for (const w of words1) {
-      if (words2.some((w2) => w2 === w || w2.includes(w) || w.includes(w2))) {
-        matches++;
-      }
-    }
-    const ratio = (matches * 2) / (words1.length + words2.length);
-    return Math.min(100, Math.round(ratio * 100));
-  };
 
   // Fetch full Surah Ayahs from API
   const fetchSurahAyahs = async (surahNumber: number) => {
@@ -137,7 +112,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
         const transcript = event.results[0][0].transcript;
         setUserSubmission(transcript);
         setIsListening(false);
-        // Automatically evaluate as soon as user finishes speaking
+        // Automatically evaluate with forgiving Quranic normalization and auto-correction
         evaluateSubmission(transcript);
       };
 
@@ -189,7 +164,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
 
     try {
       setUserSubmission('');
-      setEvaluated(false);
+      setEvaluationResult(null);
       setIsListening(true);
       recognitionRef.current.start();
     } catch (e) {
@@ -242,7 +217,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
 
     const targetIdx = Math.max(0, Math.min(ayahs.length - 1, startAyah - 1));
     setCurrentAyahIndex(targetIdx);
-    setEvaluated(false);
+    setEvaluationResult(null);
     setShowHint(false);
     setUserSubmission('');
     setCompletedAyahs([]);
@@ -257,35 +232,39 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
     }
   };
 
-  // Evaluate the user's recitation
+  // Evaluate the user's recitation with intelligent normalization & auto-correction
   const evaluateSubmission = (textToEvaluate?: string) => {
     const text = textToEvaluate !== undefined ? textToEvaluate : userSubmission;
     if (!text.trim() || !surahAyahs[currentAyahIndex]) return;
 
     const currentAyah = surahAyahs[currentAyahIndex];
-    const expectedText =
+    const targetAyahObj =
       testMode === 'continuous'
-        ? currentAyah.text
-        : surahAyahs[currentAyahIndex + 1]?.text || currentAyah.text;
+        ? currentAyah
+        : surahAyahs[currentAyahIndex + 1] || currentAyah;
 
-    const sim = computeSimilarity(text, expectedText);
-    setSimilarity(sim);
-    setEvaluated(true);
+    const result = evaluateRecitationWithAutoCorrection(
+      text,
+      targetAyahObj.text,
+      selectedSurah,
+      targetAyahObj.numberInSurah
+    );
 
-    const success = sim >= 65; // Tolerant threshold for Arabic voice recognition
-    setIsCorrect(success);
+    setEvaluationResult(result);
 
-    if (success) {
+    if (result.isMatch) {
       setStreak((prev) => prev + 1);
       setCorrectCount((prev) => prev + 1);
-      setCompletedAyahs((prev) => (prev.includes(currentAyah.numberInSurah) ? prev : [...prev, currentAyah.numberInSurah]));
+      setCompletedAyahs((prev) =>
+        prev.includes(currentAyah.numberInSurah) ? prev : [...prev, currentAyah.numberInSurah]
+      );
 
-      // If Auto Advance is enabled, automatically move to verse #2 / next verse without stopping!
+      // If Auto Advance is enabled and similarity is good, advance seamlessly
       if (autoAdvance) {
         if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
         autoAdvanceTimerRef.current = setTimeout(() => {
           advanceToNextAyah();
-        }, 1400);
+        }, 1800);
       }
     } else {
       setStreak(0);
@@ -299,7 +278,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
     const nextIndex = currentAyahIndex + 1;
     if (nextIndex < surahAyahs.length) {
       setCurrentAyahIndex(nextIndex);
-      setEvaluated(false);
+      setEvaluationResult(null);
       setShowHint(false);
       setUserSubmission('');
 
@@ -339,7 +318,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-[var(--gold)]" />
           <h2 className="font-amiri text-base sm:text-lg font-bold text-[var(--gold2)]">
-            {isRtl ? 'اختبار وتسميع الحفظ التلقائي' : 'Continuous Memorization Test'}
+            {isRtl ? 'اختبار وتسميع الحفظ مع التصحيح التلقائي' : 'Memorization & Auto-Correction'}
           </h2>
         </div>
 
@@ -355,12 +334,12 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
         <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
           <div className="text-center space-y-1">
             <h3 className="font-amiri text-xl sm:text-2xl font-bold text-[var(--gold2)]">
-              {isRtl ? 'اختر السورة ونمط التسميع' : 'Select Surah & Recitation Mode'}
+              {isRtl ? 'تسميع ذكي مع تصويب الأخطاء فورياً' : 'Smart Recitation & Instant Auto-Correction'}
             </h3>
-            <p className="text-xs text-[var(--text2)] max-w-md mx-auto">
+            <p className="text-xs text-[var(--text2)] max-w-md mx-auto leading-relaxed">
               {isRtl
-                ? 'اقرأ الآية بصوتك، وسيقوم النظام بالتحقق منها تلقائياً وتمريرك مباشرة للآية التالية دون توقف!'
-                : 'Recite verses seamlessly. The app auto-verifies your recitation and smoothly advances to the next verse!'}
+                ? 'اقرأ الآية بصوتك، وسيتعرف النظام على تلاوتك بدون الحاجة للحركات، ويصحح لك أي خطأ أو كلمة منسية تلقائياً!'
+                : 'Recite freely. The engine compares your speech ignoring diacritics and automatically highlights and corrects any recitation errors!'}
             </p>
           </div>
 
@@ -397,7 +376,9 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                 min="1"
                 max={curSurahInfo.a}
                 value={startAyah}
-                onChange={(e) => setStartAyah(Math.max(1, Math.min(curSurahInfo.a, parseInt(e.target.value) || 1)))}
+                onChange={(e) =>
+                  setStartAyah(Math.max(1, Math.min(curSurahInfo.a, parseInt(e.target.value) || 1)))
+                }
                 className="w-full bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] px-3 py-2 rounded-xl text-xs sm:text-sm outline-none focus:border-[var(--gold)]"
               />
             </div>
@@ -414,7 +395,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                 onClick={() => setTestMode('continuous')}
                 className={`p-3 rounded-2xl border text-start transition-all cursor-pointer ${
                   testMode === 'continuous'
-                    ? 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--text)]'
+                    ? 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--text)] ring-1 ring-[var(--gold)]'
                     : 'bg-[var(--bg3)] border-[var(--border2)] text-[var(--text2)]'
                 }`}
               >
@@ -432,7 +413,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                 onClick={() => setTestMode('nextAyah')}
                 className={`p-3 rounded-2xl border text-start transition-all cursor-pointer ${
                   testMode === 'nextAyah'
-                    ? 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--text)]'
+                    ? 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--text)] ring-1 ring-[var(--gold)]'
                     : 'bg-[var(--bg3)] border-[var(--border2)] text-[var(--text2)]'
                 }`}
               >
@@ -456,7 +437,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                 </span>
                 <span className="text-[0.65rem] text-[var(--text2)]">
                   {isRtl
-                    ? 'عند صحة التلاوة، ينتقل فوراً للآية رقم 2 دون الحاجة للضغط'
+                    ? 'عند صحة التلاوة، ينتقل فوراً للآية التالية بعد عرض التصحيح'
                     : 'Advances directly when the verse is recited correctly'}
                 </span>
               </div>
@@ -503,13 +484,13 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
             ) : (
               <>
                 <Sparkles className="w-4 h-4 fill-black" />
-                <span>{isRtl ? 'ابدأ التسميع الآن 🚀' : 'Start Reciting Now 🚀'}</span>
+                <span>{isRtl ? 'ابدأ التسميع والتصحيح الآن 🚀' : 'Start Reciting Now 🚀'}</span>
               </>
             )}
           </button>
         </div>
       ) : (
-        /* Active Continuous Recitation Screen */
+        /* Active Recitation Screen */
         <div className="space-y-4">
           {/* Progress Tracker Bar */}
           <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-3 flex items-center justify-between gap-3 text-xs">
@@ -539,17 +520,19 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
           {/* Main Verse Challenge Box */}
           <div
             className={`bg-[var(--bg2)] border rounded-3xl p-5 sm:p-6 shadow-xl text-center relative transition-all duration-300 ${
-              evaluated
-                ? isCorrect
+              evaluationResult
+                ? evaluationResult.isMatch
                   ? 'border-emerald-500/60 bg-gradient-to-b from-[var(--bg2)] to-emerald-950/20 shadow-[0_0_25px_rgba(16,185,129,0.15)]'
                   : 'border-amber-500/60 bg-gradient-to-b from-[var(--bg2)] to-amber-950/20'
                 : 'border-[var(--border2)]'
             }`}
           >
-            {/* Verse Number Badge */}
+            {/* Verse Number Badge & Actions */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="text-[0.7rem] font-bold text-[var(--gold)] uppercase bg-[var(--gold)]/10 px-3 py-1 rounded-full border border-[var(--gold)]/30">
-                {isRtl ? `الآية رقم [ ${currentAyahObj.numberInSurah} ]` : `Ayah [ ${currentAyahObj.numberInSurah} ]`}
+                {isRtl
+                  ? `الآية رقم [ ${currentAyahObj.numberInSurah} ]`
+                  : `Ayah [ ${currentAyahObj.numberInSurah} ]`}
               </span>
 
               {/* Audio Listen Button */}
@@ -575,7 +558,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
               </button>
             </div>
 
-            {/* Display prompt or hint */}
+            {/* Display prompt for Next Ayah mode */}
             {testMode === 'nextAyah' && currentAyahIndex > 0 && (
               <div className="mb-4 pb-3 border-b border-[var(--border2)]/50">
                 <span className="text-[0.65rem] text-[var(--text3)] uppercase block mb-1">
@@ -587,17 +570,35 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
               </div>
             )}
 
-            {/* Revealed Ayah when correct or when hint is requested */}
-            {(evaluated && isCorrect) || showHint ? (
-              <div className="py-2 animate-fade-in">
+            {/* Revealed Ayah when evaluated or hint requested */}
+            {evaluationResult || showHint ? (
+              <div className="py-2 animate-fade-in space-y-3">
                 <p className="font-quran text-xl sm:text-2xl text-[var(--gold2)] leading-[2.4] dir-rtl">
                   {currentAyahObj.text}
                 </p>
-                {evaluated && isCorrect && (
-                  <div className="mt-3 flex items-center justify-center gap-1.5 text-emerald-400 font-bold text-xs bg-emerald-500/10 py-1.5 px-3 rounded-full w-fit mx-auto border border-emerald-500/30 animate-drop-in">
-                    <CheckCircle2 className="w-4 h-4" />
+
+                {/* Evaluation Status Banner */}
+                {evaluationResult && (
+                  <div
+                    className={`flex items-center justify-center gap-2 py-1.5 px-4 rounded-full w-fit mx-auto border text-xs font-bold ${
+                      evaluationResult.isMatch
+                        ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 animate-drop-in'
+                        : 'text-amber-400 bg-amber-500/10 border-amber-500/30'
+                    }`}
+                  >
+                    {evaluationResult.isMatch ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    )}
                     <span>
-                      {isRtl ? 'أحسنت! تلاوة صحيحة ومتقنة' : 'Excellent! Perfect Recitation'} ({similarity}%)
+                      {evaluationResult.isMatch
+                        ? isRtl
+                          ? `ما شاء الله! تلاوة صحيحة ومتقنة (${evaluationResult.similarityScore}% تطابق)`
+                          : `Great! Correct Recitation (${evaluationResult.similarityScore}% Match)`
+                        : isRtl
+                        ? `تلاوتك تحتاج لتصويب (${evaluationResult.similarityScore}% تطابق)`
+                        : `Recitation Needs Correction (${evaluationResult.similarityScore}% Match)`}
                     </span>
                   </div>
                 )}
@@ -610,13 +611,15 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                     : `Please recite verse (${currentAyahObj.numberInSurah}) now 🎙️`}
                 </p>
                 <div className="text-[0.68rem] text-[var(--text3)]">
-                  {isRtl ? 'اضغط زر الميكروفون وابدأ القراءة' : 'Press microphone and start reading'}
+                  {isRtl
+                    ? 'اضغط زر الميكروفون بالأسفل وابدأ القراءة مباشرة'
+                    : 'Press microphone below and recite'}
                 </div>
               </div>
             )}
           </div>
 
-          {/* User Voice & Text Box */}
+          {/* User Voice Input Box */}
           <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-3xl p-4 sm:p-5 shadow-lg space-y-3">
             <div className="relative">
               <textarea
@@ -625,10 +628,10 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
                 placeholder={
                   isListening
                     ? isRtl
-                      ? '🎙️ جاري الاستماع لتلاوتك... تفضل بالقراءة'
+                      ? '🎙️ جاري الاستماع لتلاوتك الكريمة... تفضل بالقراءة'
                       : '🎙️ Listening to your recitation... please speak'
                     : isRtl
-                    ? 'اضغط الميكروفون للتلاوة، أو اكتب الآية هنا...'
+                    ? 'اضغط الميكروفون للتلاوة بالصوت، أو اكتب الآية هنا...'
                     : 'Press mic to recite or type verse here...'
                 }
                 rows={2}
@@ -655,14 +658,25 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
 
             {/* Actions Bar */}
             <div className="flex items-center gap-2">
-              {/* Manual Check button if typed */}
-              {!evaluated && userSubmission.trim() && !isListening && (
+              {/* Check button if typed manually */}
+              {!evaluationResult && userSubmission.trim() && !isListening && (
                 <button
                   onClick={() => evaluateSubmission()}
                   className="flex-1 py-2.5 rounded-xl bg-[var(--gold)] text-black font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md hover:bg-[var(--gold2)] active:scale-95 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                  <span>{isRtl ? 'تحقق من الآية' : 'Check Ayah'}</span>
+                  <span>{isRtl ? 'تحقق وتصحيح الآية' : 'Check & Auto-Correct'}</span>
+                </button>
+              )}
+
+              {/* Retake Voice Button */}
+              {evaluationResult && (
+                <button
+                  onClick={startListening}
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--gold)]/15 border border-[var(--gold)]/40 text-[var(--gold)] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:bg-[var(--gold)]/25 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Mic className="w-4 h-4" />
+                  <span>{isRtl ? 'إعادة التسميع بالصوت' : 'Re-recite Voice'}</span>
                 </button>
               )}
 
@@ -676,36 +690,100 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
               </button>
             </div>
 
-            {/* Mismatch Alert Feedback */}
-            {evaluated && !isCorrect && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 text-center space-y-2 animate-sheet-up">
-                <div className="flex items-center justify-center gap-1.5 text-amber-300 font-bold text-xs">
-                  <XCircle className="w-4 h-4 text-amber-400" />
-                  <span>
-                    {isRtl ? 'تحتاج لمراجعة الآية' : 'Needs Review'} ({similarity}% {isRtl ? 'تطابق' : 'Match'})
+            {/* AUTOMATIC CORRECTION & WORD-BY-WORD DIFF ENGINE */}
+            {evaluationResult && (
+              <div className="mt-4 pt-3 border-t border-[var(--border2)] space-y-3 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold2)]">
+                    <Sparkles className="w-4 h-4 text-[var(--gold)]" />
+                    <span>
+                      {isRtl ? 'التصحيح التلقائي وتدقيق الكلمات:' : 'Automatic Word-by-Word Correction:'}
+                    </span>
+                  </div>
+                  <span className="text-[0.68rem] text-[var(--text3)]">
+                    {evaluationResult.matchedWordsCount} / {evaluationResult.totalWordsCount}{' '}
+                    {isRtl ? 'كلمات صحيحة' : 'words correct'}
                   </span>
                 </div>
-                <div className="flex items-center justify-center gap-2 pt-1">
-                  <button
-                    onClick={startListening}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs flex items-center gap-1 cursor-pointer active:scale-95"
-                  >
-                    <Mic className="w-3.5 h-3.5" />
-                    <span>{isRtl ? 'أعد التلاوة' : 'Retry Voice'}</span>
-                  </button>
-                  <button
-                    onClick={() => setShowHint(true)}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--gold)] text-xs font-bold cursor-pointer"
-                  >
-                    {isRtl ? 'كشف الآية كاملة' : 'Reveal Verse'}
-                  </button>
-                  <button
-                    onClick={advanceToNextAyah}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] text-xs font-bold cursor-pointer"
-                  >
-                    {isRtl ? 'تجاوز للآية التالية' : 'Skip to Next'}
-                  </button>
+
+                {/* Word Badges Comparison Stream */}
+                <div className="p-3 bg-[var(--bg3)]/60 rounded-2xl border border-[var(--border2)] flex flex-wrap gap-1.5 items-center justify-center dir-rtl">
+                  {evaluationResult.diffs.map((d, i) => {
+                    if (d.status === 'match') {
+                      return (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-quran text-base font-bold shadow-xs"
+                          title="صحيح"
+                        >
+                          {d.expectedWord}
+                        </span>
+                      );
+                    }
+                    if (d.status === 'mismatch') {
+                      return (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-xl bg-red-500/15 border border-red-500/40 text-red-300 font-quran text-base font-bold flex flex-col items-center gap-0.5 shadow-xs"
+                        >
+                          <span className="text-emerald-400 font-bold">{d.expectedWord}</span>
+                          <span className="text-[0.62rem] text-red-400 line-through font-sans">
+                            {d.spokenWord}
+                          </span>
+                        </span>
+                      );
+                    }
+                    if (d.status === 'missing') {
+                      return (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-300 font-quran text-base font-bold shadow-xs"
+                          title="كلمة منسية"
+                        >
+                          {d.expectedWord}
+                          <span className="text-[0.55rem] block font-sans text-amber-400 font-normal">
+                            (منسية)
+                          </span>
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-lg bg-gray-500/20 text-gray-400 text-xs line-through"
+                        title="كلمة زائدة"
+                      >
+                        {d.spokenWord}
+                      </span>
+                    );
+                  })}
                 </div>
+
+                {/* Practical Correction Tips List */}
+                {evaluationResult.correctionTips.length > 0 && (
+                  <div className="bg-[var(--bg4)]/50 border border-[var(--border2)] rounded-xl p-3 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[var(--gold)] block text-[0.72rem]">
+                        {isRtl ? '🔍 مواضع التصويب في تلاوتك:' : '🔍 Correction Details:'}
+                      </span>
+                      <button
+                        onClick={() => playAyahAudio(currentAyahObj.numberInSurah)}
+                        className="px-2.5 py-1 rounded-lg bg-[var(--gold)]/15 border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/25 text-[0.68rem] font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>{isRtl ? 'استمع للصواب بصوت الشيخ' : 'Listen to Reciter'}</span>
+                      </button>
+                    </div>
+                    <ul className="space-y-1 text-[var(--text2)] text-[0.72rem]">
+                      {evaluationResult.correctionTips.map((tip, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5">
+                          <span className="text-[var(--gold)]">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>

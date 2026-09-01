@@ -4,7 +4,21 @@ import { TRANSLATIONS } from '../data/translations';
 import { ReadingProgressTracker } from './ReadingProgressTracker';
 import { loadReadingProgress } from '../utils/readingProgress';
 import { normalizeArabic } from '../utils/quranSearch';
-import { Search, Brain, Hash, Play, Sparkles, BookOpen, HardDrive, CheckCircle2, Zap, Award, Bookmark } from 'lucide-react';
+import { getUIStrings } from '../utils/uiTranslations';
+import { hapticFeedback } from '../utils/haptics';
+import { 
+  Search, 
+  Brain, 
+  Hash, 
+  Play, 
+  Sparkles, 
+  BookOpen, 
+  HardDrive, 
+  CheckCircle2, 
+  Zap, 
+  Award,
+  CalendarCheck
+} from 'lucide-react';
 
 interface QuranSectionProps {
   lang: string;
@@ -14,6 +28,7 @@ interface QuranSectionProps {
   onOpenMemorizationTest: () => void;
   onOpenRepeatModal: (surahNumber?: number) => void;
   onOpenOfflineManager?: () => void;
+  onOpenKhatmahModal?: () => void;
 }
 
 export const QuranSection: React.FC<QuranSectionProps> = ({
@@ -24,10 +39,10 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
   onOpenMemorizationTest,
   onOpenRepeatModal,
   onOpenOfflineManager,
+  onOpenKhatmahModal,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl撇 = lang === 'ar' || lang === 'ur';
-  const isRtl = isRtl撇;
+  const ui = getUIStrings(lang);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'offline'>('all');
@@ -84,7 +99,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.searchSurahPh || 'ابحث عن سورة بالاسم أو الرقم...'}
+            placeholder={t.searchSurahPh || 'Search surah...'}
             className="w-full bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text)] ps-10 pe-4 py-2.5 rounded-2xl text-xs sm:text-sm outline-none focus:border-[var(--gold)] transition-colors shadow-sm min-h-[44px]"
           />
           {searchQuery && (
@@ -102,26 +117,26 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
           <button
             onClick={onOpenGlobalSearch}
             className="flex-1 sm:flex-initial bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold)] hover:border-[var(--gold)] px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 min-h-[44px]"
-            title={t.globalAyahSearch || 'بحث في الآيات'}
+            title={t.globalAyahSearch || 'Search Ayahs'}
           >
             <Hash className="w-4 h-4 text-[var(--gold)]" />
-            <span className="whitespace-nowrap">{t.searchAyah || 'بحث الآيات'}</span>
+            <span className="whitespace-nowrap">{t.searchAyah || 'Search Ayah'}</span>
           </button>
 
           <button
             onClick={onOpenMemorizationTest}
             className="flex-1 sm:flex-initial bg-[var(--gold)]/10 border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/20 px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 min-h-[44px]"
-            title={t.memTitle || 'اختبر حفظك'}
+            title={t.memTitle || 'Test Memorization'}
           >
             <Brain className="w-4 h-4" />
-            <span className="whitespace-nowrap">{t.memTitle || 'تسميع'}</span>
+            <span className="whitespace-nowrap">{t.memTitle || 'Memorize'}</span>
           </button>
 
           {onOpenOfflineManager && (
             <button
               onClick={onOpenOfflineManager}
               className="bg-[var(--bg2)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--gold2)] px-3 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 min-h-[44px]"
-              title={isRtl ? 'إدارة الأوفلاين والتحميلات' : 'Offline downloads'}
+              title={ui.offlineManagerTitle}
             >
               <Zap className="w-4 h-4 text-[var(--gold)]" />
               <span className="hidden md:inline font-mono">{downloadedSurahs.length}/114</span>
@@ -141,7 +156,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
                 : 'text-[var(--text3)] hover:text-[var(--text)] bg-[var(--bg2)] border border-[var(--border2)]'
             }`}
           >
-            {isRtl ? 'جميع السور (114)' : 'All Surahs (114)'}
+            {ui.offlineAllSurahs}
           </button>
 
           <button
@@ -153,7 +168,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
             }`}
           >
             <HardDrive className="w-3.5 h-3.5" />
-            <span>{isRtl ? `المحفوظة بدون إنترنت (${downloadedSurahs.length})` : `Offline Saved (${downloadedSurahs.length})`}</span>
+            <span>{ui.offlineSaved} ({downloadedSurahs.length})</span>
           </button>
         </div>
 
@@ -162,7 +177,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
             onClick={onOpenOfflineManager}
             className="text-[0.72rem] text-[var(--gold)] hover:underline flex items-center gap-1 cursor-pointer"
           >
-            <span>{isRtl ? 'تحميل الكل ⚡' : 'Download all ⚡'}</span>
+            <span>{ui.offlineDownloadAll}</span>
           </button>
         )}
       </div>
@@ -177,13 +192,44 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
         />
       )}
 
+      {/* Khatmah Planner Quick Card */}
+      {!searchQuery && filterMode === 'all' && onOpenKhatmahModal && (
+        <div 
+          onClick={onOpenKhatmahModal}
+          className="bg-gradient-to-r from-[var(--gold)]/15 via-[var(--bg2)] to-[var(--gold)]/10 border border-[var(--gold)]/40 rounded-3xl p-4 sm:p-5 flex items-center justify-between shadow-md hover:border-[var(--gold)] transition-all cursor-pointer group active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[var(--gold)] text-black flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform">
+              <CalendarCheck className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div>
+              <h4 className="text-sm sm:text-base font-bold text-[var(--gold2)] flex items-center gap-1.5">
+                <span>{lang === 'ar' ? 'مخطط ومتابع ختمة القرآن' : 'Quran Khatmah Planner'}</span>
+                <span className="text-[0.62rem] bg-[var(--gold)]/20 text-[var(--gold2)] px-2 py-0.5 rounded-full font-sans font-bold">
+                  {lang === 'ar' ? 'جديد ✨' : 'NEW'}
+                </span>
+              </h4>
+              <p className="text-xs text-[var(--text2)] mt-0.5">
+                {lang === 'ar'
+                  ? 'حدد مدة ختمتك (٣٠، ٦٠ يوماً)، تابع وِردك اليومي بالأجزاء، واقرأ دعاء الختم'
+                  : 'Track your daily reading target, streaks, and complete Quran completion goal'}
+              </p>
+            </div>
+          </div>
+
+          <button className="px-3.5 py-1.5 rounded-xl bg-[var(--gold)] text-black text-xs font-bold shrink-0 shadow-sm group-hover:brightness-110 transition-all pointer-events-none">
+            {lang === 'ar' ? 'فتح المخطط 📖' : 'Open Planner'}
+          </button>
+        </div>
+      )}
+
       {/* Daily Ayah Inspiration Banner */}
       {!searchQuery && filterMode === 'all' && (
         <div className="bg-gradient-to-br from-[var(--bg2)] via-[var(--bg3)] to-[var(--bg2)] border border-[var(--gold)]/30 rounded-3xl p-4 sm:p-5 shadow-lg relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5 text-[var(--gold)] text-xs font-bold">
               <Sparkles className="w-4 h-4" />
-              <span>{t.ayahOfDay || 'آية اليوم'}</span>
+              <span>{t.ayahOfDay || 'Ayah of the Day'}</span>
             </div>
             <span className="text-[0.68rem] bg-[var(--gold)]/10 text-[var(--gold2)] px-2 py-0.5 rounded-md font-semibold font-amiri">
               {featuredSurah[lang as keyof typeof featuredSurah] || featuredSurah.ar}
@@ -198,14 +244,14 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
 
           <div className="flex items-center justify-between pt-2 border-t border-[var(--border2)]/50">
             <span className="text-[0.72rem] text-[var(--text3)]">
-              {t.surahWord || 'سورة'} {featuredSurah.n} · {featuredSurah.a} {t.ayah || 'آية'}
+              {t.surahWord || 'Surah'} {featuredSurah.n} · {featuredSurah.a} {t.ayah || 'Ayah'}
             </span>
             <button
               onClick={() => onSelectSurah(featuredSurah.n)}
               className="inline-flex items-center gap-1 text-xs font-bold text-[var(--gold)] hover:text-[var(--gold2)] transition-colors cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>{t.playSurah || 'قراءة واستماع'}</span>
+              <span>{t.playSurah || 'Read & Listen'}</span>
             </button>
           </div>
         </div>
@@ -222,7 +268,10 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
           return (
             <div
               key={surah.n}
-              onClick={() => onSelectSurah(surah.n)}
+              onClick={() => {
+                hapticFeedback.navigation();
+                onSelectSurah(surah.n);
+              }}
               className={`bg-[var(--bg2)] border rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group active:scale-[0.98] relative overflow-hidden ${
                 isCompleted ? 'border-[var(--gold)]/40 bg-[var(--gold)]/[0.03]' : 'border-[var(--border2)] hover:border-[var(--gold)]/60'
               }`}
@@ -244,19 +293,19 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
                   <div className="font-amiri text-base font-bold text-[var(--text)] group-hover:text-[var(--gold2)] truncate transition-colors flex items-center gap-1.5">
                     <span>{localizedName}</span>
                     {isCompleted && (
-                      <span className="text-[var(--gold)] shrink-0" title={isRtl ? 'تمت قراءتها في الختمة' : 'Completed in Khatma'}>
+                      <span className="text-[var(--gold)] shrink-0" title={ui.offlineCompletedBadge}>
                         <Award className="w-3.5 h-3.5 fill-[var(--gold)]/20" />
                       </span>
                     )}
                     {isSavedOffline && (
-                      <span className="text-emerald-500 shrink-0" title={isRtl ? 'محفوظة أوفلاين' : 'Saved offline'}>
+                      <span className="text-emerald-500 shrink-0" title={ui.offlineSavedBadge}>
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </span>
                     )}
                   </div>
                   <div className="text-[0.68rem] text-[var(--text3)] flex items-center gap-1.5 mt-0.5">
                     <span>
-                      {surah.a} {t.ayah || 'آية'}
+                      {surah.a} {t.ayah || 'Ayah'}
                     </span>
                     <span>·</span>
                     <span
@@ -266,7 +315,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
                           : 'text-emerald-500/90 font-medium'
                       }
                     >
-                      {isMeccan ? (t.makki || 'مكية') : (t.madani || 'مدنية')}
+                      {isMeccan ? (t.makki || 'Meccan') : (t.madani || 'Medinan')}
                     </span>
                   </div>
                 </div>
@@ -280,7 +329,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
                     onOpenRepeatModal(surah.n);
                   }}
                   className="w-8 h-8 rounded-lg bg-[var(--bg3)] text-[var(--text3)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/10 flex items-center justify-center transition-all cursor-pointer opacity-80 group-hover:opacity-100"
-                  title={t.repeatTitle || 'تكرار'}
+                  title={t.repeatTitle || 'Repeat'}
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                 </button>
@@ -296,8 +345,8 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
       {filteredSurahs.length === 0 && (
         <div className="py-16 text-center text-xs text-[var(--text3)] bg-[var(--bg2)] rounded-3xl border border-[var(--border2)]">
           {filterMode === 'offline' 
-            ? (isRtl ? 'لا توجد سور محفوظة بدون إنترنت بعد. يمكنك تحميل السور بسهولة.' : 'No offline surahs yet. You can download all surahs with one tap.')
-            : (t.noResults || 'لا توجد نتائج مطابقة')}
+            ? ui.offlineNoSurahsYet
+            : (t.noResults || 'No results found')}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Section } from '../types';
 import { TRANSLATIONS } from '../data/translations';
+import { hapticFeedback } from '../utils/haptics';
 
 interface BottomNavProps {
   currentSection: Section;
@@ -39,7 +40,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               key={item.id}
               id={`nav-item-${item.id}`}
               type="button"
-              onClick={() => onSelectSection(item.id)}
+              onClick={() => {
+                hapticFeedback.navigation();
+                onSelectSection(item.id);
+              }}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer touch-manipulation relative group ${
                 isActive
                   ? 'text-[var(--gold)] bg-[var(--gold)]/12 font-bold shadow-sm'
