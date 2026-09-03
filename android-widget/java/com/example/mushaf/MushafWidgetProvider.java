@@ -36,6 +36,11 @@ public class MushafWidgetProvider extends AppWidgetProvider {
         scheduleDailyUpdate(context);
     }
 
+    @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, android.os.Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, manager, id, newOptions);
+        update(context, manager, id);
+    }
+
     @Override public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (ACTION_DAILY_UPDATE.equals(intent.getAction())) {
