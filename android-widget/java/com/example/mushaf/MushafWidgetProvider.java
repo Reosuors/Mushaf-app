@@ -12,6 +12,7 @@ import android.os.Build;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 public class MushafWidgetProvider extends AppWidgetProvider {
     public static final String ACTION_DAILY_UPDATE = "com.example.mushaf.WIDGET_DAILY_UPDATE";
@@ -21,9 +22,13 @@ public class MushafWidgetProvider extends AppWidgetProvider {
             "وَقُلْ رَبِّ زِدْنِي عِلْمًا", "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
             "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا", "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ"
     };
-    private static final String[] SURAHS = {
+    private static final String[] SURAHS_AR = {
             "الشرح • الآية 6", "البقرة • الآية 152", "طه • الآية 114",
             "البقرة • الآية 153", "الطلاق • الآية 2", "الرعد • الآية 28"
+    };
+    private static final String[] SURAHS_EN = {
+            "Ash-Sharh • Verse 6", "Al-Baqarah • Verse 152", "Ta-Ha • Verse 114",
+            "Al-Baqarah • Verse 153", "At-Talaq • Verse 2", "Ar-Ra'd • Verse 28"
     };
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
@@ -47,13 +52,20 @@ public class MushafWidgetProvider extends AppWidgetProvider {
         for (int id : manager.getAppWidgetIds(component)) update(context, manager, id);
     }
 
+    private static boolean isArabic() {
+        return Locale.getDefault().getLanguage().equalsIgnoreCase("ar");
+    }
+
     private static void update(Context context, AppWidgetManager manager, int id) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         int index = (Calendar.getInstance().get(Calendar.DAY_OF_YEAR) - 1) % AYAT.length;
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_ayah_day);
+        boolean arabic = isArabic();
+        views.setTextViewText(R.id.widget_ayah_title, arabic ? "آية اليوم" : "Verse of the Day");
         views.setTextViewText(R.id.widget_ayah_text, AYAT[index]);
-        views.setTextViewText(R.id.widget_ayah_reference, SURAHS[index]);
-        views.setTextViewText(R.id.widget_ayah_city, p.getString("city", "مصحف"));
+        views.setTextViewText(R.id.widget_ayah_reference, arabic ? SURAHS_AR[index] : SURAHS_EN[index]);
+        views.setTextViewText(R.id.widget_ayah_city, p.getString("city", arabic ? "مصحف" : "Mushaf"));
+        views.setTextViewText(R.id.widget_ayah_badge, arabic ? "مصحف" : "MUSHAF");
         manager.updateAppWidget(id, views);
     }
 

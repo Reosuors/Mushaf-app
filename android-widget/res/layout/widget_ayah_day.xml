@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="16dp" android:gravity="center"
+    android:orientation="vertical" android:padding="14dp" android:gravity="center"
     android:background="@drawable/widget_background">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:text="آية اليوم" android:textColor="#E8CC7A" android:textSize="17sp" android:textStyle="bold" />
+        <TextView android:id="@+id/widget_ayah_badge" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="5dp" android:paddingBottom="5dp"
+            android:background="@drawable/widget_badge" android:text="مصحف" android:textColor="#17120A" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/widget_ayah_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:gravity="center" android:text="آية اليوم" android:textColor="#F5C94A" android:textSize="20sp" android:textStyle="bold" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="مصحف" android:textColor="#9A8868" android:textSize="11sp" />
+            android:text="✦" android:textColor="#F5C94A" android:textSize="21sp" />
     </LinearLayout>
+    <View android:layout_width="70dp" android:layout_height="1dp" android:layout_marginTop="7dp" android:layout_marginBottom="4dp" android:background="#C9A84C" />
     <TextView android:id="@+id/widget_ayah_text" android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1" android:gravity="center" android:text="إِنَّ مَعَ الْعُسْرِ يُسْرًا"
-        android:textColor="#F0E8D8" android:textDirection="rtl" android:textSize="22sp" android:textStyle="bold" />
+        android:textColor="#FFF1C7" android:textDirection="locale" android:textSize="22sp" android:textStyle="bold" />
     <TextView android:id="@+id/widget_ayah_reference" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:gravity="center" android:text="الشرح • الآية 6" android:textColor="#C9A84C" android:textSize="12sp" />
+        android:gravity="center" android:text="الشرح • الآية 6" android:textColor="#E2B93D" android:textSize="13sp" android:textStyle="bold" />
+    <View android:layout_width="120dp" android:layout_height="1dp" android:layout_marginTop="7dp" android:background="#5F4A1B" />
     <TextView android:id="@+id/widget_ayah_city" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:gravity="center" android:paddingTop="5dp" android:text="مصحف" android:textColor="#4A4030" android:textSize="10sp" />
+        android:gravity="center" android:paddingTop="5dp" android:text="مصحف" android:textColor="#9B896A" android:textSize="10sp" />
 </LinearLayout>

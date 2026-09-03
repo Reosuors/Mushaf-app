@@ -13,9 +13,10 @@ for source_name in ["widget_ayah_day.xml", "widget_prayer.xml"]:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text((root / "android-widget/res/layout" / source_name).read_text())
 
-background = res_dir / "drawable" / "widget_background.xml"
-background.parent.mkdir(parents=True, exist_ok=True)
-background.write_text((root / "android-widget/res/drawable/widget_background.xml").read_text())
+for source_name in ["widget_background.xml", "widget_badge.xml"]:
+    target = res_dir / "drawable" / source_name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text((root / "android-widget/res/drawable" / source_name).read_text())
 
 for source_name in ["widget_ayah_info.xml", "widget_prayer_info.xml"]:
     target = res_dir / "xml" / source_name
