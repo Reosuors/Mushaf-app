@@ -29,6 +29,7 @@ interface DrawerMenuProps {
   onOpenGlobalSearch: () => void;
   onOpenMemTest: () => void;
   onOpenKhatmahModal?: () => void;
+  onOpenReport?: () => void;
 }
 
 export const DrawerMenu: React.FC<DrawerMenuProps> = ({
@@ -42,6 +43,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   onOpenGlobalSearch,
   onOpenMemTest,
   onOpenKhatmahModal,
+  onOpenReport,
 }) => {
   if (!isOpen) return null;
 
@@ -206,6 +208,16 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
             </button>
           </div>
 
+          {onOpenReport && (
+            <button
+              onClick={onOpenReport}
+              data-testid="drawer-report"
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 border border-[var(--gold)]/40 text-[var(--gold2)] text-xs font-bold cursor-pointer transition-all"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{isRtl ? 'إبلاغ عن مشكلة' : 'Report a problem'}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

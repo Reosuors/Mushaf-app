@@ -21,6 +21,8 @@ import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { AdhanActiveBanner } from './components/AdhanActiveBanner';
 import { SidebarDashboardNav } from './components/SidebarDashboardNav';
 import { DrawerMenu } from './components/DrawerMenu';
+import { ReportFab, ReportCenter } from './components/ReportCenter';
+import { sectionLabelFor } from './utils/report';
 import { TopNavbarHub } from './components/TopNavbarHub';
 import { KhatmahModal } from './components/KhatmahModal';
 import { AyahCardModal } from './components/AyahCardModal';
@@ -66,6 +68,7 @@ export const App: React.FC = () => {
     () => (localStorage.getItem('quran_font_family') as QuranFontId) || 'amiri_quran'
   );
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // 2. Navigation State
   const [currentSection, setCurrentSection] = useState<Section>('quran');
@@ -702,6 +705,9 @@ export const App: React.FC = () => {
       </div>
 
 
+      {/* Report-a-problem floating button (with a badge when the developer replied) */}
+      <ReportFab audioVisible={audioVisible} onOpen={() => setIsReportOpen(true)} />
+
       {/* Persistent Floating Audio Player Bar */}
       <AudioPlayerBar
         visible={audioVisible}
@@ -777,7 +783,14 @@ export const App: React.FC = () => {
           setIsMemTestOpen(true);
           setIsDrawerMenuOpen(false);
         }}
+        onOpenReport={() => {
+          setIsDrawerMenuOpen(false);
+          setIsReportOpen(true);
+        }}
       />
+
+      {/* إبلاغ عن مشكلة / بلاغاتي */}
+      <ReportCenter open={isReportOpen} onClose={() => setIsReportOpen(false)} initialSection={sectionLabelFor(currentSection, audioVisible)} />
 
       {/* Theme & Design Picker Modal */}
       <ThemeModal

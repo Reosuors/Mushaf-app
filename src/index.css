@@ -470,4 +470,3 @@ body.theme-light .text-\[var\(--gold\)\] { color: var(--gold); }
 [data-design-style="modern"] .bottom-nav { border-top-color: color-mix(in srgb, var(--gold) 18%, transparent) !important; }
 [data-design-style="modern"] .font-amiri { letter-spacing: .01em; }
 
-[data-design-style="minimal"] #discord-fab-container { display: none !important; }

@@ -149,3 +149,64 @@ test('designs: six distinct layouts with Arabic names', async () => {
   const css = fs.readFileSync(path.join(root, 'src/index.css'), 'utf8');
   for (const cls of ['.mushaf-page', '.ayah-card', '.minimal-reader', '.gh-tiles', '.list-reader']) assert.ok(css.includes(cls), cls);
 });
+
+test('report: one-way delivery, two-way replies through the webhook, follow-ups thread to the original', async () => {
+  const c = await load('api/_reportCore.ts');
+  const store = c.memoryStore();
+  const sent = [];
+  let mid = 100;
+  const tg = {
+    async send(chat, text, img, replyTo) { sent.push({ chat, text, img, replyTo }); return { message_id: ++mid, photo: img ? 'PHOTO1' : null }; },
+    async call(method, body) { sent.push({ method, body }); return {}; },
+    async fileUrl() { return 'x'; },
+  };
+  const env = { TELEGRAM_CHAT_ID: '42', TELEGRAM_WEBHOOK_SECRET: 's' };
+  // empty and oversized input are refused
+  assert.equal((await c.submit(env, { message: '  ' }, { store, tg })).status, 400);
+  await assert.rejects(c.submit(env, { message: 'x', image: 'A'.repeat(c.MAX_IMAGE_B64 + 10) }, { store, tg }));
+  // new report with a photo
+  const r1 = await c.submit(env, { section: 'الرقية', message: 'الصوت ما بيشتغل', image: 'data:image/jpeg;base64,QUJD', platform: 'android', version: '1.0.30' }, { store, tg });
+  assert.equal(r1.status, 200);
+  assert.equal(r1.body.replies, true);
+  assert.equal(sent[0].chat, '42');
+  assert.match(sent[0].text, /القسم: الرقية/);
+  assert.match(sent[0].text, /android/);
+  assert.equal(sent[0].img, 'QUJD');
+  const id = r1.body.ticket;
+  assert.match(id, /^[0-9a-f]{32}$/);
+  // a stranger's message is ignored; a non-reply from the owner gets a hint
+  assert.equal((await c.onTelegramUpdate(env, { message: { chat: { id: 7 }, text: 'hi', message_id: 5 } }, { store, tg })).why, 'not_owner');
+  assert.equal((await c.onTelegramUpdate(env, { message: { chat: { id: 42 }, text: 'hi', message_id: 6 } }, { store, tg })).why, 'not_a_reply');
+  // the owner's Reply lands in the ticket
+  const up = await c.onTelegramUpdate(env, { message: { chat: { id: 42 }, message_id: 200, text: 'جرّب حدّث التطبيق', reply_to_message: { message_id: 101 } } }, { store, tg });
+  assert.equal(up.handled, true);
+  let t = await c.loadTicket(store, id);
+  assert.deepEqual(t.msgs.map((m) => m.from), ['user', 'dev']);
+  assert.equal(t.msgs[1].text, 'جرّب حدّث التطبيق');
+  const pub = c.publicThread(t, '/api/report');
+  assert.equal(pub.msgs[0].photo, `/api/report?ticket=${id}&photo=PHOTO1`);
+  // a follow-up goes to Telegram as a reply to the original report
+  const r2 = await c.submit(env, { ticket: id, message: 'ما زبط' }, { store, tg });
+  assert.equal(r2.status, 200);
+  assert.equal(sent.at(-1).replyTo, 101);
+  // and the owner can reply to the follow-up too
+  await c.onTelegramUpdate(env, { message: { chat: { id: 42 }, message_id: 201, photo: [{ file_id: 'a' }, { file_id: 'big' }], caption: 'هيك', reply_to_message: { message_id: 102 } } }, { store, tg });
+  t = await c.loadTicket(store, id);
+  assert.deepEqual(t.msgs.map((m) => m.from), ['user', 'dev', 'user', 'dev']);
+  assert.equal(t.msgs[3].photo, 'big');
+  // without storage: one-way still works
+  const r3 = await c.submit(env, { message: 'بدون تخزين' }, { store: null, tg });
+  assert.equal(r3.body.replies, false);
+  assert.equal((await c.submit(env, { ticket: id, message: 'x' }, { store: null, tg })).body.error, 'replies_off');
+});
+
+test('report: Upstash REST store speaks the Redis command protocol', async () => {
+  const c = await load('api/_reportCore.ts');
+  const calls = [];
+  const fakeFetch = async (url, init) => { calls.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ result: calls.length === 1 ? 'OK' : '"v"' }) }; };
+  const s = c.makeStore({ KV_REST_API_URL: 'https://x.upstash.io/', KV_REST_API_TOKEN: 't' }, fakeFetch);
+  await s.set('k', 'v', 60);
+  assert.deepEqual(calls[0], ['SET', 'k', 'v', 'EX', 60]);
+  assert.equal(c.makeStore({}), null);
+  assert.ok(c.makeStore({ UPSTASH_REDIS_REST_URL: 'https://y', UPSTASH_REDIS_REST_TOKEN: 't' }));
+});
