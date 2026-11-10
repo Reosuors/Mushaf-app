@@ -22,8 +22,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'azkar', label: t.navAzkar || 'الأذكار', icon: '🤲' },
     { id: 'tasbih', label: t.navTasbih || 'التسبيح', icon: '📿' },
     { id: 'asma', label: t.navAsma || 'الأسماء', icon: '☪️' },
-    { id: 'ask', label: 'اسأل', icon: '💬' },
     { id: 'ruqyah', label: 'الرقية', icon: '🛡️' },
+    { id: 'support', label: t.navSupport || 'ادعمنا', icon: '💛', isSupport: true },
   ];
 
   return (

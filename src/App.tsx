@@ -16,7 +16,6 @@ import { AudioPlayerBar } from './components/AudioPlayerBar';
 import { ThemeModal } from './components/ThemeModal';
 import { TafsirModal } from './components/TafsirModal';
 import { RepeatModal } from './components/RepeatModal';
-import { DiscordFab } from './components/DiscordFab';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { AdhanActiveBanner } from './components/AdhanActiveBanner';
@@ -36,7 +35,6 @@ const MemTestSection = React.lazy(() => import('./components/MemTestSection').th
 const AzkarSection = React.lazy(() => import('./components/AzkarSection').then((m) => ({ default: m.AzkarSection })));
 const TasbihSection = React.lazy(() => import('./components/TasbihSection').then((m) => ({ default: m.TasbihSection })));
 const AsmaSection = React.lazy(() => import('./components/AsmaSection').then((m) => ({ default: m.AsmaSection })));
-const ChatSection = React.lazy(() => import('./components/ChatSection').then((m) => ({ default: m.ChatSection })));
 const AboutSection = React.lazy(() => import('./components/AboutSection').then((m) => ({ default: m.AboutSection })));
 const SupportSection = React.lazy(() => import('./components/SupportSection').then((m) => ({ default: m.SupportSection })));
 import { RECITERS, loadSavedReciter, saveReciter } from './utils/quranAudio';
@@ -697,24 +695,12 @@ export const App: React.FC = () => {
 
               {currentSection === 'about' && <AboutSection lang={lang} />}
 
-              {currentSection === 'ask' && (
-                <ChatSection
-                  lang={lang}
-                  onOpenAyah={(sn, an) => {
-                    setCurrentSection('quran');
-                    setSelectedSurahNumber(sn);
-                    setSelectedAyahNumber(an);
-                  }}
-                />
-              )}
             </>
           )}
                   </Suspense>
         </main>
       </div>
 
-      {/* Discord Floating Action Button */}
-      <DiscordFab label="Discord" audioVisible={audioVisible} />
 
       {/* Persistent Floating Audio Player Bar */}
       <AudioPlayerBar

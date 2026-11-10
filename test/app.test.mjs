@@ -100,24 +100,12 @@ test('single-ayah audio follows the chosen reciter', async () => {
   }
 });
 
-test('chat: refusal, no-key state, citations cleaned', async () => {
-  const c = await load('api/_chatCore.ts');
-  const noKey = await c.answerQuestion({ question: 'ما فضل آية الكرسي؟' }, null);
-  assert.equal(noKey.error, 'no_key');
-  let called = false;
-  const off = await c.answerQuestion({ question: 'مين ربح مباراة كرة القدم مبارح؟' }, async () => { called = true; return ''; });
-  assert.equal(off.onTopic, false);
-  assert.equal(off.answer, c.REFUSAL_AR);
-  assert.equal(called, false, 'off-topic must not call the model');
-  const modelOff = await c.answerQuestion({ question: 'اكتب لي قصيدة حب' }, async () => '{"on_topic": false, "answer": "x", "citations": []}');
-  assert.equal(modelOff.answer, c.REFUSAL_AR);
-  const good = await c.answerQuestion({ question: 'ما فضل آية الكرسي؟', ground: [{ surah: 2, ayah: 255, text: 'x' }] }, async (sys, user) => {
-    assert.match(sys, /لا تخترع/);
-    assert.match(user, /\(2:255\)/);
-    return '{"on_topic": true, "answer": "هي أعظم آية", "citations": [{"type":"quran","surah":2,"ayah":255},{"type":"quran","surah":2,"ayah":999},{"type":"hadith","source":"صحيح مسلم 810"}]}';
-  });
-  assert.equal(good.onTopic, true);
-  assert.deepEqual(good.citations.map((x) => x.type), ['quran', 'hadith']);
+test('service worker never caches the server API; no AI chat section', () => {
+  const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8');
+  assert.match(sw, /pathname\.startsWith\('\/api\/'\)\) return;/);
+  const types = fs.readFileSync(path.join(root, 'src/types.ts'), 'utf8');
+  assert.ok(!/'ask'/.test(types));
+  assert.ok(!fs.existsSync(path.join(root, 'api/chat.ts')));
 });
 
 test('index.html: zoom allowed, manifest and icons linked', () => {

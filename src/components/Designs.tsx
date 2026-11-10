@@ -28,7 +28,6 @@ const TILES: { id: Section | 'juz' | 'search' | 'khatmah'; icon: string; label: 
   { id: 'prayer', icon: '🕌', label: 'مواقيت الصلاة' },
   { id: 'tasbih', icon: '📿', label: 'التسبيح' },
   { id: 'search', icon: '🔎', label: 'بحث في القرآن' },
-  { id: 'ask', icon: '💬', label: 'اسأل' },
   { id: 'asma', icon: '☪️', label: 'أسماء الله' },
 ];
 

@@ -56,7 +56,6 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
     { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', icon: '📿', desc: 'عداد الاستغفار والتسبيح' },
     { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', icon: '☪️', desc: 'شرح وتدبر الأسماء العظمى' },
     { id: 'support', label: t.navSupport || 'ادعم التطبيق', icon: '💛', desc: 'شاركنا الأجر والخير' },
-    { id: 'ask', label: 'اسأل (أسئلة دينية)', icon: '💬', desc: 'اسأل عن القرآن والحديث والفقه مع ذكر المصادر' },
     { id: 'about', label: 'عن التطبيق والمصادر', icon: 'ℹ️', desc: 'مصدر نص القرآن والتلاوات والخطوط' },
   ];
 
@@ -207,15 +206,6 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
             </button>
           </div>
 
-          <a
-            href="https://discord.gg/VBPmVCBds"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/30 text-[#8ea1ff] text-xs font-bold transition-all"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'انضم لمجتمع ديسكورد' : 'Join Discord Community'}</span>
-          </a>
         </div>
       </div>
     </div>

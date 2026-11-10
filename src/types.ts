@@ -1,4 +1,4 @@
-export type Section = 'prayer' | 'quran' | 'azkar' | 'tasbih' | 'asma' | 'support' | 'about' | 'ask' | 'ruqyah';
+export type Section = 'prayer' | 'quran' | 'azkar' | 'tasbih' | 'asma' | 'support' | 'about' | 'ruqyah';
 
 export interface SurahMeta {
   n: number;
