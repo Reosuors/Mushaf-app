@@ -95,7 +95,10 @@ export default async function handler(req: any, res: any) {
     const raw = String(e?.message || e || 'unknown');
     const detail = (key ? raw.split(key).join('[key]') : raw).replace(/AIza[0-9A-Za-z_\-]{20,}|AQ\.[0-9A-Za-z_\-.]{20,}/g, '[key]').slice(0, 600);
     const status = e?.status || e?.code || e?.error?.code || null;
-    console.error('[api/chat] generate failed', status, detail);
-    res.status(500).json({ ok: false, error: 'server', status, detail, answer: 'صار خطأ بالخادم، جرّب مرة ثانية.' });
+    // Shape of the configured key only (never its content), to spot a truncated or mis-pasted value.
+    const rawKey = process.env.GEMINI_API_KEY || '';
+    const keyShape = { length: key ? key.length : 0, prefix: key ? key.slice(0, 3) : '', trimmed: rawKey !== key, cleanChars: !!key && /^[A-Za-z0-9._\-]+$/.test(key) };
+    console.error('[api/chat] generate failed', status, detail, keyShape);
+    res.status(500).json({ ok: false, error: 'server', status, detail, keyShape, answer: 'صار خطأ بالخادم، جرّب مرة ثانية.' });
   }
 }
