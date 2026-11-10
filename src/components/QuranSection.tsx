@@ -4,6 +4,7 @@ import { TRANSLATIONS } from '../data/translations';
 import { ReadingProgressTracker } from './ReadingProgressTracker';
 import { loadReadingProgress } from '../utils/readingProgress';
 import { normalizeArabic } from '../utils/quranSearch';
+import { getAyahOfDayRef, getDisplayAyahText, toArabicDigits, juzFirstAyah, hizbFirstAyah, pageFirstAyah } from '../utils/quranText';
 import { getUIStrings } from '../utils/uiTranslations';
 import { hapticFeedback } from '../utils/haptics';
 import { 
@@ -46,6 +47,8 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'offline'>('all');
+  const [listMode, setListMode] = useState<'surahs' | 'juz'>('surahs');
+  const [pageInput, setPageInput] = useState('');
   const [completedSurahs, setCompletedSurahs] = useState<number[]>([]);
 
   useEffect(() => {
@@ -63,7 +66,12 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
   const dayOfYear = Math.floor(
     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24
   );
-  const featuredSurah = SURAHS[dayOfYear % SURAHS.length];
+  const daily = getAyahOfDayRef(today);
+  const featuredSurah = SURAHS[daily.surah - 1];
+  const [dailyText, setDailyText] = useState('');
+  useEffect(() => {
+    getDisplayAyahText(daily.surah, daily.ayah).then(setDailyText).catch(() => setDailyText(''));
+  }, [daily.surah, daily.ayah]);
 
   const filteredSurahs = SURAHS.filter((s) => {
     if (filterMode === 'offline' && !downloadedSurahs.includes(s.n)) {
@@ -152,7 +160,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
             onClick={() => setFilterMode('all')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               filterMode === 'all'
-                ? 'bg-[var(--gold)] text-black shadow-xs'
+                ? 'bg-[var(--gold)] text-black shadow-xs whitespace-nowrap'
                 : 'text-[var(--text3)] hover:text-[var(--text)] bg-[var(--bg2)] border border-[var(--border2)]'
             }`}
           >
@@ -161,7 +169,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
 
           <button
             onClick={() => setFilterMode('offline')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterMode === 'offline'
                 ? 'bg-[var(--gold)] text-black shadow-xs'
                 : 'text-[var(--text3)] hover:text-[var(--text)] bg-[var(--bg2)] border border-[var(--border2)]'
@@ -175,7 +183,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
         {onOpenOfflineManager && (
           <button
             onClick={onOpenOfflineManager}
-            className="text-[0.72rem] text-[var(--gold)] hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-[0.72rem] text-[var(--gold)] hover:underline hidden sm:flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
           >
             <span>{ui.offlineDownloadAll}</span>
           </button>
@@ -236,18 +244,22 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
             </span>
           </div>
 
-          <p className="font-quran text-lg sm:text-xl text-[var(--text)] leading-[2.2] dir-rtl text-center my-3 text-glow">
-            {featuredSurah.n === 1
-              ? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ ۝ ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'
-              : 'وَقُل رَّبِّ زِدْنِي عِلْمًا'}
+          <p className="font-quran text-lg sm:text-xl text-[var(--text)] leading-[2.2] text-center my-3 text-glow" dir="rtl">
+            {dailyText ? (
+              <>
+                {dailyText} <span className="text-[var(--gold)]">﴿{toArabicDigits(daily.ayah)}﴾</span>
+              </>
+            ) : (
+              <span className="text-sm text-[var(--text3)]">{lang === 'ar' ? 'جاري تحميل الآية…' : 'Loading…'}</span>
+            )}
           </p>
 
           <div className="flex items-center justify-between pt-2 border-t border-[var(--border2)]/50">
             <span className="text-[0.72rem] text-[var(--text3)]">
-              {t.surahWord || 'Surah'} {featuredSurah.n} · {featuredSurah.a} {t.ayah || 'Ayah'}
+              {lang === 'ar' ? `سورة ${featuredSurah.ar} · الآية ${toArabicDigits(daily.ayah)}` : `Surah ${featuredSurah.en} · Ayah ${daily.ayah}`}
             </span>
             <button
-              onClick={() => onSelectSurah(featuredSurah.n)}
+              onClick={() => onSelectSurah(featuredSurah.n, daily.ayah)}
               className="inline-flex items-center gap-1 text-xs font-bold text-[var(--gold)] hover:text-[var(--gold2)] transition-colors cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -257,9 +269,102 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
         </div>
       )}
 
+      {/* Surahs / Juz switch + jump to page */}
+      {!searchQuery && filterMode === 'all' && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center bg-[var(--bg2)] border border-[var(--border2)] p-1 rounded-xl gap-1" role="tablist">
+            {(['surahs', 'juz'] as const).map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={listMode === m}
+                onClick={() => setListMode(m)}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                  listMode === m ? 'bg-[var(--gold)] text-black' : 'text-[var(--text2)]'
+                }`}
+              >
+                {m === 'surahs' ? 'السور' : 'الأجزاء والأحزاب'}
+              </button>
+            ))}
+          </div>
+          <form
+            className="flex items-center gap-1.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const p = parseInt(pageInput, 10);
+              if (p >= 1 && p <= 604) {
+                const r = pageFirstAyah(p);
+                hapticFeedback.navigation();
+                onSelectSurah(r.surah, r.ayah);
+                setPageInput('');
+              }
+            }}
+          >
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={604}
+              value={pageInput}
+              onChange={(e) => setPageInput(e.target.value)}
+              placeholder="صفحة ١–٦٠٤"
+              aria-label="رقم الصفحة"
+              className="w-28 bg-[var(--bg2)] border border-[var(--border2)] rounded-xl px-3 py-1.5 text-xs text-[var(--text)] focus:outline-none focus:border-[var(--gold)]"
+            />
+            <button type="submit" className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-xs font-bold text-[var(--gold)] cursor-pointer">
+              انتقال
+            </button>
+          </form>
+        </div>
+      )}
+
+      {!searchQuery && filterMode === 'all' && listMode === 'juz' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => {
+            const start = juzFirstAyah(j);
+            const sm = SURAHS[start.surah - 1];
+            return (
+              <div key={j} className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-3 space-y-2">
+                <button
+                  onClick={() => {
+                    hapticFeedback.navigation();
+                    onSelectSurah(start.surah, start.ayah);
+                  }}
+                  className="w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center text-sm font-bold text-[var(--gold2)]">
+                      {toArabicDigits(j)}
+                    </span>
+                    <span className="text-sm font-bold text-[var(--text)]">الجزء {toArabicDigits(j)}</span>
+                  </span>
+                  <span className="text-[0.7rem] text-[var(--text3)]">
+                    يبدأ من {sm.ar} {toArabicDigits(start.ayah)}
+                  </span>
+                </button>
+                <div className="flex gap-1.5">
+                  {[j * 2 - 1, j * 2].map((h) => {
+                    const hs = hizbFirstAyah(h);
+                    return (
+                      <button
+                        key={h}
+                        onClick={() => onSelectSurah(hs.surah, hs.ayah)}
+                        className="flex-1 text-[0.68rem] py-1 rounded-lg bg-[var(--bg3)] text-[var(--text2)] hover:text-[var(--gold)] cursor-pointer"
+                      >
+                        الحزب {toArabicDigits(h)} · {SURAHS[hs.surah - 1].ar} {toArabicDigits(hs.ayah)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Surah List Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        {filteredSurahs.map((surah) => {
+      <div data-surah-list className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {(listMode === 'juz' && !searchQuery && filterMode === 'all' ? [] : filteredSurahs).map((surah) => {
           const localizedName = surah[lang as keyof typeof surah] || surah.ar;
           const isMeccan = surah.t === 'm' || surah.t === 'مكية';
           const isSavedOffline = downloadedSurahs.includes(surah.n);
@@ -272,20 +377,20 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
                 hapticFeedback.navigation();
                 onSelectSurah(surah.n);
               }}
-              className={`bg-[var(--bg2)] border rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group active:scale-[0.98] relative overflow-hidden ${
+              className={`surah-card bg-[var(--bg2)] border rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group active:scale-[0.98] relative overflow-hidden ${
                 isCompleted ? 'border-[var(--gold)]/40 bg-[var(--gold)]/[0.03]' : 'border-[var(--border2)] hover:border-[var(--gold)]/60'
               }`}
             >
               {/* Surah Number & Names */}
               <div className="flex items-center gap-3 min-w-0">
                 {/* Number Badge */}
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
+                <div className={`surah-num w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
                   isCompleted 
                     ? 'bg-[var(--gold)]/20 border-[var(--gold)] text-[var(--gold)]' 
                     : 'bg-[var(--bg3)] border-[var(--border2)] group-hover:border-[var(--gold)]/40 group-hover:bg-[var(--gold)]/10 text-[var(--gold2)]'
                 }`}>
                   <span className="font-sans text-xs font-bold">
-                    {surah.n}
+                    {toArabicDigits(surah.n)}
                   </span>
                 </div>
 
@@ -342,7 +447,7 @@ export const QuranSection: React.FC<QuranSectionProps> = ({
         })}
       </div>
 
-      {filteredSurahs.length === 0 && (
+      {filteredSurahs.length === 0 && listMode === 'surahs' && (
         <div className="py-16 text-center text-xs text-[var(--text3)] bg-[var(--bg2)] rounded-3xl border border-[var(--border2)]">
           {filterMode === 'offline' 
             ? ui.offlineNoSurahsYet

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Section, Reciter, RepeatSession, TafsirState, DesignStyleId, QuranFontId, AyahCardData } from './types';
 import { SURAHS } from './data/surahs';
 import { THEMES } from './data/themes';
@@ -21,7 +21,6 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { AdhanActiveBanner } from './components/AdhanActiveBanner';
 import { SidebarDashboardNav } from './components/SidebarDashboardNav';
-import { PortalHeaderHub } from './components/PortalHeaderHub';
 import { DrawerMenu } from './components/DrawerMenu';
 import { TopNavbarHub } from './components/TopNavbarHub';
 import { KhatmahModal } from './components/KhatmahModal';
@@ -30,35 +29,41 @@ import { AmbientFocusAudio } from './components/AmbientFocusAudio';
 import { getDownloadedSurahNumbers } from './utils/offlineStorage';
 
 // Section Views
-import { PrayerSection } from './components/PrayerSection';
+const PrayerSection = React.lazy(() => import('./components/PrayerSection').then((m) => ({ default: m.PrayerSection })));
 import { QuranSection } from './components/QuranSection';
 import { SurahView } from './components/SurahView';
-import { MemTestSection } from './components/MemTestSection';
-import { AzkarSection } from './components/AzkarSection';
-import { TasbihSection } from './components/TasbihSection';
-import { AsmaSection } from './components/AsmaSection';
-import { SupportSection } from './components/SupportSection';
+const MemTestSection = React.lazy(() => import('./components/MemTestSection').then((m) => ({ default: m.MemTestSection })));
+const AzkarSection = React.lazy(() => import('./components/AzkarSection').then((m) => ({ default: m.AzkarSection })));
+const TasbihSection = React.lazy(() => import('./components/TasbihSection').then((m) => ({ default: m.TasbihSection })));
+const AsmaSection = React.lazy(() => import('./components/AsmaSection').then((m) => ({ default: m.AsmaSection })));
+const ChatSection = React.lazy(() => import('./components/ChatSection').then((m) => ({ default: m.ChatSection })));
+const AboutSection = React.lazy(() => import('./components/AboutSection').then((m) => ({ default: m.AboutSection })));
+const SupportSection = React.lazy(() => import('./components/SupportSection').then((m) => ({ default: m.SupportSection })));
+import { RECITERS, loadSavedReciter, saveReciter } from './utils/quranAudio';
+import { getDisplayAyahText } from './utils/quranText';
+import { DesignHome, DesignReader } from './components/Designs';
+import { DESIGN_IDS, QURAN_FONTS } from './data/designStyles';
+import { stopRuqyah } from './utils/ruqyahPlayer';
+import { listenForWidgetLaunch } from './utils/widget';
+const RuqyahSection = React.lazy(() => import('./components/RuqyahSection').then((m) => ({ default: m.RuqyahSection })));
 
-const DEFAULT_RECITERS: Reciter[] = [
-  { id: 1, name: 'مشاري راشد العفاسي (Mishary Al-Afasy)', server: 'https://server8.mp3quran.net/afs/', moshaf: 'حفص عن عاصم' },
-  { id: 2, name: 'عبدالباسط عبدالصمد - مرتل (Abdulbasit)', server: 'https://server7.mp3quran.net/basit/', moshaf: 'حفص عن عاصم' },
-  { id: 3, name: 'سعد الغامدي (Saad Al-Ghamdi)', server: 'https://server7.mp3quran.net/s_gmd/', moshaf: 'حفص عن عاصم' },
-  { id: 4, name: 'عبدالرحمن السديس (Abdul Rahman Al-Sudais)', server: 'https://server11.mp3quran.net/sds/', moshaf: 'حفص عن عاصم' },
-  { id: 5, name: 'محمود خليل الحصري (Al-Husary)', server: 'https://server13.mp3quran.net/husr/', moshaf: 'حفص عن عاصم' },
-  { id: 6, name: 'محمد صديق المنشاوي (Al-Minshawi)', server: 'https://server10.mp3quran.net/minsh/', moshaf: 'حفص عن عاصم' },
-  { id: 7, name: 'أحمد بن علي العجمي (Ahmed Al-Ajmy)', server: 'https://server10.mp3quran.net/ajm/', moshaf: 'حفص عن عاصم' },
-  { id: 8, name: 'ماهر المعيقلي (Maher Al-Muaiqly)', server: 'https://server12.mp3quran.net/maher/', moshaf: 'حفص عن عاصم' },
-  { id: 9, name: 'سعود الشريم (Saud Al-Shuraim)', server: 'https://server7.mp3quran.net/shur/', moshaf: 'حفص عن عاصم' },
-  { id: 10, name: 'ياسر الدوسري (Yasser Al-Dosari)', server: 'https://server11.mp3quran.net/yasser/', moshaf: 'حفص عن عاصم' },
-];
+const LEGACY_DESIGN: Record<string, DesignStyleId> = { mushaf_classic: 'mushaf_page', drawer_menu: 'drawer', sidebar_dashboard: 'grid', top_navbar: 'modern', portal_hub: 'modern' };
+function initialDesign(): DesignStyleId {
+  const saved = localStorage.getItem('mushaf_design_style') || 'modern';
+  if ((DESIGN_IDS as string[]).includes(saved)) return saved as DesignStyleId;
+  return LEGACY_DESIGN[saved] || 'modern';
+}
+
+
 
 export const App: React.FC = () => {
   // 1. Language & Theme State
   const [lang, setLang] = useState<string>(() => localStorage.getItem('mushaf_lang') || 'ar');
-  const [currentTheme, setCurrentTheme] = useState<string>(() => localStorage.getItem('mushaf_theme') || 'dark-gold');
-  const [currentDesignStyle, setCurrentDesignStyle] = useState<DesignStyleId>(
-    () => (localStorage.getItem('mushaf_design_style') as DesignStyleId) || 'modern'
-  );
+  const [currentTheme, setCurrentTheme] = useState<string>(() => {
+    const saved = localStorage.getItem('mushaf_theme') || 'dark-gold';
+    return THEMES.some((t) => t.id === saved) ? saved : 'dark-gold';
+  });
+  const [currentDesignStyle, setCurrentDesignStyle] = useState<DesignStyleId>(initialDesign);
   const [currentQuranFont, setCurrentQuranFont] = useState<QuranFontId>(
     () => (localStorage.getItem('quran_font_family') as QuranFontId) || 'amiri_quran'
   );
@@ -75,8 +80,12 @@ export const App: React.FC = () => {
   const [country, setCountry] = useState<string>(() => localStorage.getItem('mushaf_country') || 'Saudi Arabia');
 
   // 4. Reciters & Audio State
-  const [reciters, setReciters] = useState<Reciter[]>(DEFAULT_RECITERS);
-  const [selectedReciter, setSelectedReciter] = useState<Reciter | null>(DEFAULT_RECITERS[0]);
+  const [reciters] = useState<Reciter[]>(RECITERS);
+  const [selectedReciter, setSelectedReciterState] = useState<Reciter | null>(() => loadSavedReciter());
+  const setSelectedReciter = (r: Reciter) => {
+    saveReciter(r);
+    setSelectedReciterState(r);
+  };
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -132,9 +141,36 @@ export const App: React.FC = () => {
         root.style.setProperty(key, val);
       });
     }
-    document.body.className = `theme-${currentTheme}`;
+    document.body.className = `theme-${currentTheme}${themeObj?.light ? ' theme-light' : ' theme-dark'}`;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeObj?.vars['--bg'] || '#080808');
     localStorage.setItem('mushaf_theme', currentTheme);
   }, [currentTheme]);
+
+  // Android home-screen widgets open the app at their ayah / at prayer times
+  useEffect(() => {
+    let off: () => void = () => {};
+    listenForWidgetLaunch((t) => {
+      if (t.surah) {
+        setCurrentSection('quran');
+        setSelectedSurahNumber(t.surah);
+        setSelectedAyahNumber(t.ayah);
+      } else if (t.section === 'prayer') {
+        setSelectedSurahNumber(null);
+        setCurrentSection('prayer');
+      }
+    }).then((f) => (off = f));
+    return () => off();
+  }, []);
+
+  // Ruqyah playlist and the main player never talk over each other
+  useEffect(() => {
+    const onRuqyah = () => {
+      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+      setIsPlaying(false);
+    };
+    window.addEventListener('ruqyah_play', onRuqyah);
+    return () => window.removeEventListener('ruqyah_play', onRuqyah);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-design-style', currentDesignStyle);
@@ -147,37 +183,6 @@ export const App: React.FC = () => {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang]);
-
-  // Fetch Full Reciters list from API (with fallback)
-  useEffect(() => {
-    async function loadReciters() {
-      try {
-        const res = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
-        const data = await res.json();
-        if (data.reciters && Array.isArray(data.reciters)) {
-          const formatted: Reciter[] = data.reciters
-            .filter((r: any) => r.moshaf && r.moshaf.length > 0)
-            .map((r: any) => {
-              const rawServer = r.moshaf[0].server || '';
-              return {
-                id: r.id,
-                name: r.name,
-                server: rawServer.endsWith('/') ? rawServer : `${rawServer}/`,
-                moshaf: r.moshaf[0].name,
-              };
-            });
-          if (formatted.length > 0) {
-            setReciters(formatted);
-            const found = formatted.find((r) => r.id === 1 || r.name.includes('العفاسي'));
-            if (found) setSelectedReciter(found);
-          }
-        }
-      } catch {
-        // Fallback already assigned in initial state
-      }
-    }
-    loadReciters();
-  }, []);
 
   // Set up persistent audio callbacks
   const tryNextAudioCandidate = () => {
@@ -313,6 +318,7 @@ export const App: React.FC = () => {
   // Play full surah audio via reciter candidates with failover
   const playSurahAudio = (surahNumber: number) => {
     if (!audioRef.current) return;
+    stopRuqyah();
 
     if (curSurahAudioPlaying.current === surahNumber && !audioRef.current.paused) {
       audioRef.current.pause();
@@ -332,11 +338,12 @@ export const App: React.FC = () => {
   // Play single ayah audio using high-availability candidate CDNs
   const playAyahAudio = async (surahNumber: number, ayahNumber: number) => {
     if (!audioRef.current) return;
+    stopRuqyah();
     curSurahAudioPlaying.current = surahNumber;
     curAyahAudioPlaying.current = ayahNumber;
     setCurrentPlayingAyah(ayahNumber);
 
-    const candidates = getAyahAudioCandidates(surahNumber, ayahNumber);
+    const candidates = getAyahAudioCandidates(surahNumber, ayahNumber, selectedReciter);
     playAudioWithCandidates(candidates);
     setAudioVisible(true);
   };
@@ -388,15 +395,11 @@ export const App: React.FC = () => {
   ) => {
     if (!audioRef.current || session.stopped) return;
     try {
-      const candidates = getAyahAudioCandidates(surahN, ayahN);
+      const candidates = getAyahAudioCandidates(surahN, ayahN, session.rec);
       playAudioWithCandidates(candidates);
 
-      // Fetch Arabic text for the banner
-      const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surahN}:${ayahN}`);
-      const d = await res.json();
-      if (d.code === 200) {
-        setActiveRepeatAyahText(d.data.text);
-      }
+      // Arabic text for the banner (local Tanzil text)
+      setActiveRepeatAyahText(await getDisplayAyahText(surahN, ayahN));
     } catch {}
   };
 
@@ -502,7 +505,8 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-shell h-[100dvh] max-h-screen w-full bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans transition-colors relative selection:bg-[var(--gold)] selection:text-black overflow-hidden">
-      {/* Top App Bar */}
+      {/* Top App Bar (the Minimal design hides all chrome) */}
+      {currentDesignStyle !== 'minimal' && (
       <TopBar
         lang={lang}
         currentSection={currentSection}
@@ -522,27 +526,15 @@ export const App: React.FC = () => {
           setCurrentSection('quran');
         }}
       />
-
-      {/* Live Adhan Screen Banner */}
-      <AdhanActiveBanner lang={lang} />
-
-      {/* Top Navigation Bar Layout when 'top_navbar' is active */}
-      {currentDesignStyle === 'top_navbar' && (
-        <TopNavbarHub
-          currentSection={currentSection}
-          onSelectSection={(sec) => {
-            setSelectedSurahNumber(null);
-            setIsMemTestOpen(false);
-            setCurrentSection(sec);
-          }}
-          lang={lang}
-          onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
-        />
       )}
 
-      {/* Optional Split Portal Header Hub */}
-      {currentDesignStyle === 'portal_hub' && selectedSurahNumber === null && !isMemTestOpen && (
-        <PortalHeaderHub
+      {/* Live Adhan Screen Banner */}
+
+      <AdhanActiveBanner lang={lang} />
+
+      {/* Top tabs navigation for the Mushaf Page design */}
+      {currentDesignStyle === 'mushaf_page' && selectedSurahNumber === null && (
+        <TopNavbarHub
           currentSection={currentSection}
           onSelectSection={(sec) => {
             setSelectedSurahNumber(null);
@@ -557,7 +549,7 @@ export const App: React.FC = () => {
       {/* Main Body Workspace Container */}
       <div className="flex-1 flex overflow-hidden min-h-0 relative">
         {/* Persistent Side Navigation Bar for Sidebar Dashboard Layout */}
-        {currentDesignStyle === 'sidebar_dashboard' && (
+        {currentDesignStyle === 'grid' && (
           <div className="hidden md:flex shrink-0 h-full">
             <SidebarDashboardNav
               currentSection={currentSection}
@@ -581,11 +573,33 @@ export const App: React.FC = () => {
 
         {/* Main Content Area - Scrollable */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative pb-6">
+          <Suspense fallback={<div className="flex items-center justify-center py-24 text-[var(--gold)] text-sm">جاري التحميل…</div>}>
           {/* If Memorization Test is active */}
           {isMemTestOpen ? (
             <MemTestSection
               lang={lang}
               onBack={() => setIsMemTestOpen(false)}
+            />
+          ) : selectedSurahNumber !== null && currentDesignStyle !== 'modern' ? (
+            <DesignReader
+              design={currentDesignStyle}
+              surahNumber={selectedSurahNumber}
+              initialAyahNumber={selectedAyahNumber}
+              fontFamily={(QURAN_FONTS.find((f) => f.id === currentQuranFont) || QURAN_FONTS[0]).fontFamily}
+              currentPlayingAyah={currentPlayingAyah}
+              isPlaying={isPlaying}
+              onBack={() => {
+                setSelectedSurahNumber(null);
+                setSelectedAyahNumber(undefined);
+              }}
+              onPlaySurah={(sn) => playSurahAudio(sn)}
+              onPlayAyah={(sn, an) => playAyahAudio(sn, an)}
+              onOpenTafsir={(sn, an, text) => handleOpenTafsir(sn, an, text)}
+              onNavigateSurah={(sn) => {
+                setSelectedSurahNumber(sn);
+                setSelectedAyahNumber(undefined);
+                document.querySelector('main')?.scrollTo({ top: 0 });
+              }}
             />
           ) : selectedSurahNumber !== null ? (
             /* Surah Reader View */
@@ -611,6 +625,11 @@ export const App: React.FC = () => {
               }}
               onOpenTafsir={(sn, an, text) => handleOpenTafsir(sn, an, text)}
               onOpenAyahCard={(cardData) => setAyahCardData(cardData)}
+              onNavigateSurah={(sn) => {
+                setSelectedSurahNumber(sn);
+                setSelectedAyahNumber(undefined);
+                document.querySelector('main')?.scrollTo({ top: 0 });
+              }}
             />
           ) : (
             /* Main Sections */
@@ -629,7 +648,27 @@ export const App: React.FC = () => {
                 />
               )}
 
-              {currentSection === 'quran' && (
+              {currentSection === 'quran' && currentDesignStyle !== 'modern' && (
+                <DesignHome
+                  design={currentDesignStyle}
+                  onSelectSurah={(sn, an) => {
+                    setSelectedSurahNumber(sn);
+                    setSelectedAyahNumber(an);
+                  }}
+                  onSelectSection={(sec) => setCurrentSection(sec)}
+                  onOpenGlobalSearch={() => setIsSearchModalOpen(true)}
+                  onOpenKhatmah={() => setIsKhatmahModalOpen(true)}
+                  onOpenDrawer={() => setIsDrawerMenuOpen(true)}
+                />
+              )}
+              {currentSection === 'ruqyah' && (
+                <RuqyahSection
+                  reciters={reciters}
+                  selectedReciter={selectedReciter}
+                  onSelectReciter={(r) => setSelectedReciter(r)}
+                />
+              )}
+              {currentSection === 'quran' && currentDesignStyle === 'modern' && (
                 <QuranSection
                   lang={lang}
                   downloadedSurahs={downloadedSurahs}
@@ -648,15 +687,29 @@ export const App: React.FC = () => {
                 />
               )}
 
-              {currentSection === 'azkar' && <AzkarSection lang={lang} />}
+              {currentSection === 'azkar' && <AzkarSection lang={lang} onOpenRuqyah={() => setCurrentSection('ruqyah')} />}
 
               {currentSection === 'tasbih' && <TasbihSection lang={lang} />}
 
               {currentSection === 'asma' && <AsmaSection lang={lang} />}
 
               {currentSection === 'support' && <SupportSection lang={lang} />}
+
+              {currentSection === 'about' && <AboutSection lang={lang} />}
+
+              {currentSection === 'ask' && (
+                <ChatSection
+                  lang={lang}
+                  onOpenAyah={(sn, an) => {
+                    setCurrentSection('quran');
+                    setSelectedSurahNumber(sn);
+                    setSelectedAyahNumber(an);
+                  }}
+                />
+              )}
             </>
           )}
+                  </Suspense>
         </main>
       </div>
 
@@ -696,12 +749,14 @@ export const App: React.FC = () => {
       {/* Bottom App Navigation (completely hidden if Top Navbar, Drawer Menu, or Portal Hub layout is selected) */}
       <div
         className={
-          currentDesignStyle === 'top_navbar' ||
-          currentDesignStyle === 'drawer_menu' ||
-          currentDesignStyle === 'portal_hub'
+          currentDesignStyle === 'mushaf_page' ||
+          currentDesignStyle === 'drawer' ||
+          currentDesignStyle === 'minimal'
             ? 'hidden'
-            : currentDesignStyle === 'sidebar_dashboard'
+            : currentDesignStyle === 'grid'
             ? 'md:hidden'
+            : currentDesignStyle === 'cards'
+            ? 'cards-tabbar'
             : ''
         }
       >

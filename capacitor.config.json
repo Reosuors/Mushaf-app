@@ -1,0 +1,8 @@
+{
+  "appId": "com.ahmad.mushaf",
+  "appName": "Mushaf",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

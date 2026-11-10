@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center" android:layoutDirection="rtl"
+    android:background="@drawable/widget_background" android:padding="14dp">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🕌 مواقيت الصلاة"
+        android:textColor="#FFD4AF37" android:textSize="14sp" android:textStyle="bold" />
+    <TextView android:id="@+id/p_city" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=""
+        android:textColor="#99F5EEDB" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/p_next_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الصلاة القادمة"
+        android:textColor="#FFD4AF37" android:textSize="15sp" android:textStyle="bold" />
+    <TextView android:id="@+id/p_next_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--"
+        android:textColor="#FFF5EEDB" android:textSize="30sp" android:textStyle="bold" />
+    <Chronometer android:id="@+id/p_countdown" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="#CCD4AF37" android:textSize="14sp" android:layoutDirection="ltr" />
+    <ImageView android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="6dp" android:layout_marginBottom="4dp" android:src="@drawable/widget_gold_line" android:scaleType="fitXY" android:importantForAccessibility="no" />
+    <TextView android:id="@+id/p_fajr" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical|start"
+        android:background="@drawable/widget_badge" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp"
+        android:textColor="#FFF5EEDB" android:textSize="14sp" android:maxLines="2" android:text="" />
+    <TextView android:id="@+id/p_dhuhr" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical|start"
+        android:background="@drawable/widget_badge" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp"
+        android:textColor="#FFF5EEDB" android:textSize="14sp" android:maxLines="2" android:text="" />
+    <TextView android:id="@+id/p_asr" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical|start"
+        android:background="@drawable/widget_badge" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp"
+        android:textColor="#FFF5EEDB" android:textSize="14sp" android:maxLines="2" android:text="" />
+    <TextView android:id="@+id/p_maghrib" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical|start"
+        android:background="@drawable/widget_badge" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp"
+        android:textColor="#FFF5EEDB" android:textSize="14sp" android:maxLines="2" android:text="" />
+    <TextView android:id="@+id/p_isha" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical|start"
+        android:background="@drawable/widget_badge" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp"
+        android:textColor="#FFF5EEDB" android:textSize="14sp" android:maxLines="2" android:text="" />
+</LinearLayout>

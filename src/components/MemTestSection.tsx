@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getSurahAyahs, stripBasmala } from '../utils/quranText';
+import { loadSavedReciter } from '../utils/quranAudio';
 import { requestMicrophonePermission } from '../utils/permissions';
 import { SURAHS } from '../data/surahs';
 import { TRANSLATIONS } from '../data/translations';
@@ -84,12 +86,12 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
   const fetchSurahAyahs = async (surahNumber: number) => {
     setLoadingAyahs(true);
     try {
-      const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-      const data = await res.json();
-      if (data.code === 200 && data.data?.ayahs) {
-        setSurahAyahs(data.data.ayahs);
-        return data.data.ayahs;
-      }
+      const loaded = (await getSurahAyahs(surahNumber)).map((a) => ({
+        ...a,
+        text: stripBasmala(surahNumber, a.numberInSurah, a.text),
+      }));
+      setSurahAyahs(loaded);
+      return loaded;
     } catch (e) {
       console.warn('Surah load error:', e);
     } finally {
@@ -197,7 +199,7 @@ export const MemTestSection: React.FC<MemTestSectionProps> = ({ lang, onBack }) 
 
     const sPad = String(selectedSurah).padStart(3, '0');
     const aPad = String(ayahNumInSurah).padStart(3, '0');
-    const url = `https://everyayah.com/data/Alafasy_128kbps/${sPad}${aPad}.mp3`;
+    const url = `https://everyayah.com/data/${loadSavedReciter().everyayah || 'Alafasy_128kbps'}/${sPad}${aPad}.mp3`;
 
     const audio = new Audio(url);
     audioPlayerRef.current = audio;

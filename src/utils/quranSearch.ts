@@ -1,6 +1,6 @@
 import { AyahData } from '../types';
 import { SURAHS } from '../data/surahs';
-import { getSurahOffline, getDownloadedSurahNumbers } from './offlineStorage';
+import { searchQuranLocal, loadQuran, stripBasmala, getGlobalAyahNumber } from './quranText';
 
 export interface SearchResultItem {
   number: number;
@@ -205,236 +205,52 @@ const CORE_VERSES_CACHE: {
 ];
 
 /**
- * Intelligent Smart Quran Search:
- * 1. Normalized exact search across AlQuran API
- * 2. Search offline downloaded surahs in IndexedDB
- * 3. Nearest-match fuzzy fallback: if typos or spelling mistakes exist,
- *    calculate similarity and return the closest verses.
+ * Quran search — over the Quran text ONLY (bundled Tanzil quran-uthmani), never tafsir.
+ * 1. Diacritic-insensitive exact phrase search over all 6236 ayahs.
+ * 2. If nothing matches, a nearest-match fallback over the same text (for typos).
  */
 export async function smartSearchQuran(query: string): Promise<{
   results: SearchResultItem[];
   isFuzzyNearestMatch: boolean;
   searchedTerm: string;
+  total?: number;
 }> {
   const rawQuery = query.trim();
-  const normQuery = normalizeArabic(rawQuery);
-
-  if (!normQuery) {
+  if (!normalizeArabic(rawQuery)) {
     return { results: [], isFuzzyNearestMatch: false, searchedTerm: rawQuery };
   }
-
-  const foundResults: SearchResultItem[] = [];
-  const seenKeys = new Set<string>();
-
-  // 1. Try API search with raw query and normalized query
-  try {
-    const urls = [
-      `https://api.alquran.cloud/v1/search/${encodeURIComponent(rawQuery)}/all/ar`,
-    ];
-    if (normQuery !== rawQuery) {
-      urls.push(`https://api.alquran.cloud/v1/search/${encodeURIComponent(normQuery)}/all/ar`);
-    }
-
-    for (const url of urls) {
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.code === 200 && Array.isArray(data.data?.matches)) {
-          for (const match of data.data.matches) {
-            const key = `${match.surah.number}:${match.numberInSurah}`;
-            if (!seenKeys.has(key)) {
-              seenKeys.add(key);
-              foundResults.push({
-                number: match.number,
-                text: match.text,
-                surah: {
-                  number: match.surah.number,
-                  name: match.surah.name,
-                  englishName: match.surah.englishName,
-                },
-                numberInSurah: match.numberInSurah,
-                isNearestMatch: false,
-                similarityScore: 100,
-              });
-            }
-          }
-        }
-      } catch {}
-      if (foundResults.length > 0) break;
-    }
-  } catch {}
-
-  // 2. Search locally in offline IndexedDB cached surahs
-  try {
-    const downloadedSurahNums = await getDownloadedSurahNumbers();
-    for (const sNum of downloadedSurahNums) {
-      const cachedAyahs = await getSurahOffline(sNum);
-      if (cachedAyahs && cachedAyahs.length > 0) {
-        const sInfo = SURAHS.find((s) => s.n === sNum);
-        for (const ayah of cachedAyahs) {
-          const key = `${sNum}:${ayah.numberInSurah}`;
-          if (seenKeys.has(key)) continue;
-
-          const ayahNorm = normalizeArabic(ayah.text);
-          if (ayahNorm.includes(normQuery)) {
-            seenKeys.add(key);
-            foundResults.push({
-              number: ayah.number,
-              text: ayah.text,
-              surah: {
-                number: sNum,
-                name: sInfo?.ar || `سورة ${sNum}`,
-                englishName: sInfo?.en || `Surah ${sNum}`,
-              },
-              numberInSurah: ayah.numberInSurah,
-              isNearestMatch: false,
-              similarityScore: 100,
-            });
-          }
-        }
-      }
-    }
-  } catch {}
-
-  // If exact or normalized matches were found, return them
-  if (foundResults.length > 0) {
+  const toItem = (s: number, a: number, text: string, extra: Partial<SearchResultItem> = {}): SearchResultItem => {
+    const meta = SURAHS[s - 1];
     return {
-      results: foundResults.slice(0, 50),
-      isFuzzyNearestMatch: false,
-      searchedTerm: rawQuery,
+      number: getGlobalAyahNumber(s, a),
+      text,
+      surah: { number: s, name: meta.ar, englishName: meta.en },
+      numberInSurah: a,
+      ...extra,
     };
+  };
+
+  const { hits, total } = await searchQuranLocal(rawQuery, 200);
+  if (hits.length > 0) {
+    return { results: hits.map((h) => toItem(h.surah, h.ayah, h.text)), isFuzzyNearestMatch: false, searchedTerm: rawQuery, total };
   }
 
-  // 3. FUZZY / NEAREST MATCH SEARCH (when there are typos or slight spelling differences)
-  // e.g. "قل اعود برب الناس" -> finds "قل اعوذ برب الناس" (Al-Falaq / An-Nas)
-  // e.g. "والعصر ان لانسان لفي خسر" -> finds Al-Asr
-  // e.g. "الله لا اله الا هو الحي القيوم" -> finds Ayat Al-Kursi
-  const candidateVerses: {
-    surahNumber: number;
-    ayahNumber: number;
-    text: string;
-    surahName: string;
-    surahEnName: string;
-  }[] = [];
-
-  // Add core famous verses
-  for (const cv of CORE_VERSES_CACHE) {
-    const sInfo = SURAHS.find((s) => s.n === cv.surahNumber);
-    candidateVerses.push({
-      surahNumber: cv.surahNumber,
-      ayahNumber: cv.ayahNumber,
-      text: cv.text,
-      surahName: sInfo?.ar || `سورة ${cv.surahNumber}`,
-      surahEnName: sInfo?.en || `Surah ${cv.surahNumber}`,
-    });
-  }
-
-  // Add all cached local verses to candidates
-  try {
-    const downloadedSurahNums = await getDownloadedSurahNumbers();
-    for (const sNum of downloadedSurahNums) {
-      const cachedAyahs = await getSurahOffline(sNum);
-      if (cachedAyahs) {
-        const sInfo = SURAHS.find((s) => s.n === sNum);
-        for (const ayah of cachedAyahs) {
-          candidateVerses.push({
-            surahNumber: sNum,
-            ayahNumber: ayah.numberInSurah,
-            text: ayah.text,
-            surahName: sInfo?.ar || `سورة ${sNum}`,
-            surahEnName: sInfo?.en || `Surah ${sNum}`,
-          });
-        }
-      }
-    }
-  } catch {}
-
-  // If query specifies a surah name (e.g. "البقرة 255" or "يس 5" or "الكهف"), try to parse and fetch
-  const surahNameMatch = SURAHS.find((s) => {
-    const sNorm = normalizeArabic(s.ar);
-    return normQuery.includes(sNorm);
-  });
-
-  if (surahNameMatch) {
-    try {
-      const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNameMatch.n}`);
-      const data = await res.json();
-      if (data.code === 200 && data.data?.ayahs) {
-        for (const a of data.data.ayahs) {
-          candidateVerses.push({
-            surahNumber: surahNameMatch.n,
-            ayahNumber: a.numberInSurah,
-            text: a.text,
-            surahName: surahNameMatch.ar,
-            surahEnName: surahNameMatch.en,
-          });
-        }
-      }
-    } catch {}
-  }
-
-  // Also try token queries against API to pull candidate verses with similar words
-  const words = normQuery.split(' ').filter((w) => w.length >= 3);
-  if (words.length > 0) {
-    const longestWord = [...words].sort((a, b) => b.length - a.length)[0];
-    try {
-      const res = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(longestWord)}/all/ar`);
-      const data = await res.json();
-      if (data.code === 200 && Array.isArray(data.data?.matches)) {
-        for (const m of data.data.matches.slice(0, 20)) {
-          candidateVerses.push({
-            surahNumber: m.surah.number,
-            ayahNumber: m.numberInSurah,
-            text: m.text,
-            surahName: m.surah.name,
-            surahEnName: m.surah.englishName,
-          });
-        }
-      }
-    } catch {}
-  }
-
-  // Score all candidate verses
-  const scoredCandidates: {
-    item: SearchResultItem;
-    score: number;
-  }[] = [];
-
-  const processedKeys = new Set<string>();
-
-  for (const cv of candidateVerses) {
-    const key = `${cv.surahNumber}:${cv.ayahNumber}`;
-    if (processedKeys.has(key)) continue;
-    processedKeys.add(key);
-
-    const score = calculateAyahSimilarity(normQuery, cv.text);
-    if (score >= 0.35) { // Minimum relevance threshold
-      scoredCandidates.push({
-        item: {
-          number: cv.surahNumber * 1000 + cv.ayahNumber,
-          text: cv.text,
-          surah: {
-            number: cv.surahNumber,
-            name: cv.surahName,
-            englishName: cv.surahEnName,
-          },
-          numberInSurah: cv.ayahNumber,
-          isNearestMatch: true,
-          similarityScore: Math.min(99, Math.round(score * 100)),
-        },
-        score,
-      });
+  // Nearest-match fallback (typos / missing words)
+  const quran = await loadQuran();
+  const scored: { s: number; a: number; text: string; score: number }[] = [];
+  for (let si = 0; si < quran.length; si++) {
+    for (let ai = 0; ai < quran[si].length; ai++) {
+      const text = stripBasmala(si + 1, ai + 1, quran[si][ai]);
+      const score = calculateAyahSimilarity(rawQuery, text);
+      if (score >= 0.6) scored.push({ s: si + 1, a: ai + 1, text, score });
     }
   }
-
-  // Sort by highest similarity score
-  scoredCandidates.sort((a, b) => b.score - a.score);
-
-  const nearestResults = scoredCandidates.slice(0, 15).map((sc) => sc.item);
-
+  scored.sort((x, y) => y.score - x.score);
+  const top = scored.slice(0, 10);
   return {
-    results: nearestResults,
-    isFuzzyNearestMatch: nearestResults.length > 0,
+    results: top.map((h) => toItem(h.s, h.a, h.text, { isNearestMatch: true, similarityScore: Math.round(h.score * 100) })),
+    isFuzzyNearestMatch: top.length > 0,
     searchedTerm: rawQuery,
+    total: top.length,
   };
 }

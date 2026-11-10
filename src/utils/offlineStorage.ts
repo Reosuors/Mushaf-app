@@ -1,3 +1,4 @@
+import { getSurahAyahs } from './quranText';
 import { AyahData, DownloadProgress } from '../types';
 import { SURAHS } from '../data/surahs';
 
@@ -136,14 +137,10 @@ export async function isSurahDownloaded(surahNumber: number): Promise<boolean> {
  * Fetch and download a Surah from API and save to IndexedDB
  */
 export async function downloadSurahFromApi(surahNumber: number): Promise<AyahData[]> {
-  const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-  const data = await res.json();
-  if (data.code === 200 && data.data?.ayahs) {
-    const ayahs: AyahData[] = data.data.ayahs;
-    await saveSurahOffline(surahNumber, ayahs);
-    return ayahs;
-  }
-  throw new Error('Failed to download Surah verses');
+  // Text comes from the bundled Tanzil quran-uthmani file (cached for offline by the service worker)
+  const ayahs: AyahData[] = await getSurahAyahs(surahNumber);
+  await saveSurahOffline(surahNumber, ayahs);
+  return ayahs;
 }
 
 /**

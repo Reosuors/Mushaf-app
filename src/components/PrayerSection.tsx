@@ -225,12 +225,17 @@ export const PrayerSection: React.FC<PrayerSectionProps> = ({
       `المغرب ${timings.Maghrib}`,
       `العشاء ${timings.Isha}`,
     ].join('  •  ');
+    const d = new Date();
     void syncWidgetData({
       mode: 'ayah',
       prayers: prayerSummary,
       city: inputCity || city || 'الموقع الحالي',
+      country: inputCountry || country || '',
+      method,
+      timings: JSON.stringify({ Fajr: timings.Fajr, Sunrise: timings.Sunrise, Dhuhr: timings.Dhuhr, Asr: timings.Asr, Maghrib: timings.Maghrib, Isha: timings.Isha }),
+      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
     });
-  }, [prayerData, inputCity, city]);
+  }, [prayerData, inputCity, city, inputCountry, country, method]);
 
   // Live countdown calculation
   useEffect(() => {

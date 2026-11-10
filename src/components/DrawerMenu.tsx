@@ -51,10 +51,13 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   const navItems: { id: Section; label: string; icon: string; desc: string }[] = [
     { id: 'quran', label: t.navQuran || 'القرآن الكريم', icon: '📖', desc: 'تلاوة، تفسير، وترجمات' },
     { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', icon: '🕌', desc: 'الأذان والقبلة والعد التنازلي' },
+    { id: 'ruqyah', label: 'الرقية الشرعية', icon: '🛡️', desc: 'قراءة أو استماع بالسماعات 🎧' },
     { id: 'azkar', label: t.navAzkar || 'حصن المسلم والأذكار', icon: '🤲', desc: 'أذكار الصباح والمساء والنوم' },
     { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', icon: '📿', desc: 'عداد الاستغفار والتسبيح' },
     { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', icon: '☪️', desc: 'شرح وتدبر الأسماء العظمى' },
     { id: 'support', label: t.navSupport || 'ادعم التطبيق', icon: '💛', desc: 'شاركنا الأجر والخير' },
+    { id: 'ask', label: 'اسأل (أسئلة دينية)', icon: '💬', desc: 'اسأل عن القرآن والحديث والفقه مع ذكر المصادر' },
+    { id: 'about', label: 'عن التطبيق والمصادر', icon: 'ℹ️', desc: 'مصدر نص القرآن والتلاوات والخطوط' },
   ];
 
   return (

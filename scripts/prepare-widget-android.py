@@ -1,39 +1,31 @@
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-java_dir = root / "android/app/src/main/java/com/example/mushaf"
+java_dir = root / "android/app/src/main/java/com/ahmad/mushaf"
 res_dir = root / "android/app/src/main/res"
 java_dir.mkdir(parents=True, exist_ok=True)
 
-for source in (root / "android-widget/java/com/example/mushaf").glob("*.java"):
+for source in (root / "android-widget/java/com/ahmad/mushaf").glob("*.java"):
     (java_dir / source.name).write_text(source.read_text())
 
-for source_name in ["widget_ayah_day.xml", "widget_prayer.xml"]:
-    target = res_dir / "layout" / source_name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text((root / "android-widget/res/layout" / source_name).read_text())
-
-for source_name in ["widget_background.xml", "widget_badge.xml"]:
-    target = res_dir / "drawable" / source_name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text((root / "android-widget/res/drawable" / source_name).read_text())
-
-for source_name in ["widget_ayah_info.xml", "widget_prayer_info.xml"]:
-    target = res_dir / "xml" / source_name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text((root / "android-widget/res/xml" / source_name).read_text())
+# copy every widget resource (layouts for small / medium / large, drawables, provider info)
+for kind in ["layout", "drawable", "xml"]:
+    for source in sorted((root / "android-widget/res" / kind).glob("*.xml")):
+        target = res_dir / kind / source.name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(source.read_text())
 
 main = java_dir / "MainActivity.java"
 text = main.read_text()
 if "WidgetBridgePlugin" not in text:
     text = text.replace(
-        "package com.example.mushaf;\n",
-        "package com.example.mushaf;\n\nimport android.os.Bundle;\n",
+        "package com.ahmad.mushaf;\n",
+        "package com.ahmad.mushaf;\n\nimport android.os.Bundle;\n",
         1,
     )
     text = text.replace(
         "import com.getcapacitor.BridgeActivity;",
-        "import com.getcapacitor.BridgeActivity;\n\nimport com.example.mushaf.WidgetBridgePlugin;",
+        "import com.getcapacitor.BridgeActivity;\n\nimport com.ahmad.mushaf.WidgetBridgePlugin;",
         1,
     )
     text = text.replace(
@@ -64,7 +56,7 @@ receivers = """        <receiver
             android:exported=\"true\">
             <intent-filter>
                 <action android:name=\"android.appwidget.action.APPWIDGET_UPDATE\" />
-                <action android:name=\"com.example.mushaf.WIDGET_DAILY_UPDATE\" />
+                <action android:name=\"com.ahmad.mushaf.WIDGET_DAILY_UPDATE\" />
             </intent-filter>
             <meta-data android:name=\"android.appwidget.provider\" android:resource=\"@xml/widget_ayah_info\" />
         </receiver>
@@ -73,7 +65,7 @@ receivers = """        <receiver
             android:exported=\"true\">
             <intent-filter>
                 <action android:name=\"android.appwidget.action.APPWIDGET_UPDATE\" />
-                <action android:name=\"com.example.mushaf.PRAYER_WIDGET_DAILY_UPDATE\" />
+                <action android:name=\"com.ahmad.mushaf.PRAYER_WIDGET_DAILY_UPDATE\" />
             </intent-filter>
             <meta-data android:name=\"android.appwidget.provider\" android:resource=\"@xml/widget_prayer_info\" />
         </receiver>

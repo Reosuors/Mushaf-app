@@ -3,6 +3,10 @@ name: Build Android App
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'electron/**'
+      - '.github/workflows/build-desktop.yml'
+      - '**.md'
   workflow_dispatch:
 
 jobs:
@@ -28,7 +32,7 @@ jobs:
 
     - name: Initialize Capacitor
       run: |
-        npx cap init "Mushaf App" com.example.mushaf --web-dir dist || true
+        npx cap init "Mushaf" com.ahmad.mushaf --web-dir dist || true
         npx cap add android || true
 
     - name: Prepare Assets & Generate App Icon
@@ -50,17 +54,15 @@ jobs:
       run: |
         cat <<EOF > capacitor.config.json
         {
-          "appId": "com.example.mushaf",
-          "appName": "Mushaf App",
+          "appId": "com.ahmad.mushaf",
+          "appName": "Mushaf",
           "webDir": "dist",
           "android": {
-            "allowMixedContent": true
+            "allowMixedContent": false
           }
         }
         EOF
 
-        # Keep viewport-fit=cover but do not add body padding: the app shell and bottom nav handle safe areas themselves.
-        sed -i 's/<meta name="viewport"[^>]*>/<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">/g' dist/index.html || true
         npx cap sync android
         # Capacitor generates the manifest during the build; declare runtime permissions explicitly.
         python3 - <<'PY'
@@ -94,17 +96,46 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
-    - name: Build Debug APK & Release AAB
+    - name: Configure release signing (Play upload key from secrets)
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      run: |
+        echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+        test -s "$RUNNER_TEMP/upload.jks"
+        KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" python3 scripts/configure-release-signing.py
+
+    - name: Build signed release APK & AAB
+      env:
+        KEYSTORE_FILE: ${{ runner.temp }}/upload.jks
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        VERSION_CODE: ${{ github.run_number }}
+        VERSION_NAME: 1.0.${{ github.run_number }}
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
-        ./gradlew bundleRelease
+        ./gradlew assembleRelease bundleRelease
+        mkdir -p ../release
+        cp app/build/outputs/apk/release/app-release.apk ../release/Mushaf_release.apk
+        cp app/build/outputs/bundle/release/app-release.aab ../release/Mushaf_release.aab
 
     - name: Upload APK & AAB Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: android-builds
+        name: android-release
         path: |
-          android/app/build/outputs/apk/debug/app-debug.apk
-          android/app/build/outputs/bundle/release/app-release.aab
+          release/Mushaf_release.apk
+          release/Mushaf_release.aab
+
+    - name: Verify signatures and widgets
+      if: always()
+      continue-on-error: true
+      run: |
+        BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+        "$BT/apksigner" verify --verbose --print-certs release/Mushaf_release.apk | grep -v "^WARNING" | head -20
+        jarsigner -verify release/Mushaf_release.aab | tail -2
+        keytool -printcert -jarfile release/Mushaf_release.aab | grep -E "SHA1|SHA256"
+        "$BT/aapt2" dump badging release/Mushaf_release.apk | grep -E "^package|sdkVersion|targetSdkVersion"
+        "$BT/aapt2" dump xmltree --file AndroidManifest.xml release/Mushaf_release.apk | grep -E "WidgetProvider" 
+        rm -f "$RUNNER_TEMP/upload.jks"

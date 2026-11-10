@@ -25,7 +25,9 @@ export const TopNavbarHub: React.FC<TopNavbarHubProps> = ({
   const navTabs: { id: Section; label: string; icon: string }[] = [
     { id: 'quran', label: t.navQuran || 'القرآن الكريم', icon: '📖' },
     { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', icon: '🕌' },
+    { id: 'ruqyah', label: 'الرقية الشرعية', icon: '🛡️' },
     { id: 'azkar', label: t.navAzkar || 'حصن المسلم', icon: '🤲' },
+    { id: 'ask', label: 'اسأل', icon: '💬' },
     { id: 'tasbih', label: t.navTasbih || 'المسبحة', icon: '📿' },
     { id: 'asma', label: t.navAsma || 'أسماء الله', icon: '☪️' },
     { id: 'support', label: t.navSupport || 'ادعمنا', icon: '💛' },

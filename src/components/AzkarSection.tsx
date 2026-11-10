@@ -5,10 +5,11 @@ import { Check, RotateCcw, Sparkles, Shield, Sun, Moon, Sunset } from 'lucide-re
 import { hapticFeedback } from '../utils/haptics';
 
 interface AzkarSectionProps {
+  onOpenRuqyah?: () => void;
   lang: string;
 }
 
-export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
+export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang, onOpenRuqyah }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar';
   const [activeTab, setActiveTab] = useState<'sabah' | 'masa' | 'nawm' | 'ruqyah'>('sabah');
@@ -100,6 +101,7 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang }) => {
         <button
           onClick={() => {
             hapticFeedback.selection();
+            if (onOpenRuqyah) { onOpenRuqyah(); return; }
             setActiveTab('ruqyah');
             setUserCounters({});
           }}

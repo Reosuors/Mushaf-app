@@ -323,8 +323,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
               const isActive = theme.id === currentThemeId;
               const [c1, c2, c3, c4] = theme.colors;
               const name = lang === 'ar' ? theme.nameAr : theme.nameEn;
-              const isLight =
-                theme.id === 'light-pearl' || theme.id === 'sepia-mushaf';
+              const isLight = !!theme.light;
 
               return (
                 <button
@@ -336,23 +335,23 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
                       : 'border-[var(--border2)] hover:border-[var(--gold)]/50'
                   }`}
                 >
-                  {/* Palette visual preview */}
-                  <div className="h-16 w-full relative overflow-hidden flex">
-                    <div className="flex-1 h-full" style={{ backgroundColor: c1 }} />
-                    <div className="flex-1 h-full" style={{ backgroundColor: c4 }} />
-
-                    {/* Center emblem preview */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="px-2.5 py-0.5 rounded-lg border font-amiri text-[0.7rem] font-bold shadow"
-                        style={{
-                          backgroundColor: c4,
-                          borderColor: `${c2}60`,
-                          color: c2,
-                        }}
-                      >
-                        ﷽
-                      </div>
+                  {/* Live mini preview of the theme's own design */}
+                  <div
+                    className={`h-24 w-full relative overflow-hidden p-2 pattern-${theme.preview?.pattern || 'none'}`}
+                    style={{ backgroundColor: theme.preview?.bg || c1, ['--pat' as any]: theme.preview?.accent || c2 }}
+                  >
+                    <div
+                      className="h-full w-full flex flex-col items-center justify-center gap-1 shadow-sm"
+                      style={{
+                        backgroundColor: theme.preview?.card || c4,
+                        borderRadius: theme.preview?.radius || '12px',
+                        border: theme.preview?.border || `1px solid ${c2}40`,
+                        color: theme.preview?.text || c3,
+                        fontFamily: theme.preview?.font,
+                      }}
+                    >
+                      <span className="font-amiri text-[0.8rem] font-bold" style={{ color: theme.preview?.accent || c2 }}>﷽</span>
+                      <span className="text-[0.6rem] opacity-80">الفاتحة · ٧ آيات</span>
                     </div>
                   </div>
 
@@ -361,11 +360,15 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
                     className="p-2.5 flex items-center justify-between w-full"
                     style={{ backgroundColor: c4 }}
                   >
-                    <span
-                      className="text-[0.75rem] font-bold truncate"
-                      style={{ color: c3 }}
-                    >
-                      {name}
+                    <span className="flex flex-col min-w-0">
+                      <span className="text-[0.75rem] font-bold truncate" style={{ color: c3 }}>
+                        {name}
+                      </span>
+                      {theme.descAr && (
+                        <span className="text-[0.6rem] leading-snug line-clamp-2" style={{ color: c3, opacity: 0.7 }}>
+                          {theme.descAr}
+                        </span>
+                      )}
                     </span>
                     <div
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[0.6rem] font-black transition-all ${

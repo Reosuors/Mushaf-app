@@ -1,4 +1,4 @@
-export type Section = 'prayer' | 'quran' | 'azkar' | 'tasbih' | 'asma' | 'support';
+export type Section = 'prayer' | 'quran' | 'azkar' | 'tasbih' | 'asma' | 'support' | 'about' | 'ask' | 'ruqyah';
 
 export interface SurahMeta {
   n: number;
@@ -40,6 +40,7 @@ export interface Reciter {
   server: string;
   moshaf?: string;
   readId?: number;
+  everyayah?: string;
 }
 
 export interface AyahTiming {
@@ -98,8 +99,20 @@ export interface AppTheme {
   id: string;
   nameAr: string;
   nameEn: string;
-  colors: [string, string, string, string];
+  colors: [string, string, string, string] | string[];
   vars: Record<string, string>;
+  descAr?: string;
+  light?: boolean;
+  preview?: {
+    bg: string;
+    card: string;
+    accent: string;
+    text: string;
+    radius: string;
+    border: string;
+    font: string;
+    pattern: string;
+  };
 }
 
 export interface CountryItem {
@@ -150,10 +163,11 @@ export interface TafsirState {
 
 export type DesignStyleId =
   | 'modern'
-  | 'top_navbar'
-  | 'drawer_menu'
-  | 'sidebar_dashboard'
-  | 'mushaf_classic';
+  | 'mushaf_page'
+  | 'cards'
+  | 'minimal'
+  | 'grid'
+  | 'drawer';
 
 export interface KhatmahPlan {
   id: string;

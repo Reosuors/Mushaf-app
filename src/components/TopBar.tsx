@@ -107,7 +107,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             id="topbar-drawer-menu-btn"
             onClick={onOpenDrawerMenu}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 ${
-              currentDesignStyle === 'drawer_menu'
+              (currentDesignStyle === 'drawer' || currentDesignStyle === 'minimal')
                 ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold ring-2 ring-[var(--gold)]/50 shadow-md'
                 : 'bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] hover:border-[var(--gold)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/10'
             }`}

@@ -1,57 +1,15 @@
 import { DesignStyleConfig, QuranFontConfig } from '../types';
 
 export const DESIGN_STYLES: DesignStyleConfig[] = [
-  {
-    id: 'modern',
-    nameAr: 'الحديث العصري (Modern App)',
-    nameEn: 'Modern App (Floating Bar)',
-    descAr: 'تصميم التطبيقات العصرية: شريط علوي أنيق، مساحات متوازنة، وشريط تنقل سفلي تفاعلي مع تأثيرات لمس سلسة.',
-    descEn: 'Contemporary balanced app layout with top header, rounded clean cards, and responsive bottom dock navigation.',
-    badgeAr: 'افتراضي عصري',
-    badgeEn: 'Modern Default',
-    icon: 'Sparkles',
-  },
-  {
-    id: 'top_navbar',
-    nameAr: 'الشريط العلوي فقط (Top Header Navigation)',
-    nameEn: 'Top Header Navigation Hub',
-    descAr: 'تصميم ينقل شريط التنقل بالكامل إلى الأعلى بجانب الشعار مع إلغاء وحذف الشريط السفلي تماماً لتوفير مساحة شاشة كاملة للقراءة والتصفح.',
-    descEn: 'Relocates all primary section tabs strictly to the upper top bar and completely eliminates the bottom bar for maximum viewport focus.',
-    badgeAr: 'شريط علوي (بدون سفلي)',
-    badgeEn: 'Top Bar Only',
-    icon: 'LayoutTemplate',
-  },
-  {
-    id: 'drawer_menu',
-    nameAr: 'القائمة الجانبية المنزلقة (3 خطوط ☰)',
-    nameEn: 'Side Hamburger Drawer Menu',
-    descAr: 'شاشة نقية خالية تماماً من الأشرطة السفلية: زر 3 خطوط في الزاوية العلوية يفتح قائمة انزلاقية فاخرة وسريعة للوصول لجميع الأقسام والأدوات.',
-    descEn: 'Clean distraction-free interface without bottom bar: Sleek 3-lines hamburger button in the top corner slides out a full-featured drawer.',
-    badgeAr: 'قائمة منزلقة ☰',
-    badgeEn: 'Drawer Menu',
-    icon: 'Menu',
-  },
-  {
-    id: 'sidebar_dashboard',
-    nameAr: 'اللوحة الشاملة والشريط الجانبي (Sidebar Dashboard)',
-    nameEn: 'Sidebar Dashboard Workspace',
-    descAr: 'تغيير هيكلي كامل: تحويل التنقل إلى شريط جانبي رأسي متكامل مع لوحة تحكم عريضة، مواقيت الصلاة المباشرة، وسرعة وصول فائقة للأقسام.',
-    descEn: 'Full structural revamp: Left/Right vertical sidebar workspace with live prayer glance widget, broad viewport, and desktop-grade controls.',
-    badgeAr: 'لوحة جانبية كاملة',
-    badgeEn: 'Sidebar Workspace',
-    icon: 'LayoutGrid',
-  },
-  {
-    id: 'mushaf_classic',
-    nameAr: 'المصحف التراثي المذهب (Classic Ornate Mushaf)',
-    nameEn: 'Classic Ornate Heritage Mushaf',
-    descAr: 'تصميم تراثي أصيل: إطارات مذهبة مزدوجة مستوحاة من المصاحف الشريفة العثمانية والأندلسية مع نقوش وزخارف حول الآيات والخلفيات.',
-    descEn: 'Traditional gilded borders, Andalusian double-line frames, antique parchment cards, and Quranic arabesque motifs.',
-    badgeAr: 'تراثي مذهب',
-    badgeEn: 'Classic Heritage',
-    icon: 'BookOpen',
-  },
+  { id: 'modern', nameAr: 'الأساسي (المحسّن)', nameEn: 'Classic Gold (default)', descAr: 'تصميمك الأصلي بألوانه الذهبية، بعد تحسين المسافات والخطوط والبطاقات. شريط تنقل سفلي.', descEn: 'Your original dark-gold app, polished.', badgeAr: 'الافتراضي', badgeEn: 'Default', icon: 'Sparkles' },
+  { id: 'mushaf_page', nameAr: 'صفحة المصحف', nameEn: 'Mushaf Page', descAr: 'مثل المصحف الورقي: صفحات بإطار مزخرف، الآيات متصلة مع علامات ﴿ ﴾، رقم الصفحة والجزء، وفهرس سور كجدول. التنقل بشريط علوي.', descEn: 'Framed mushaf pages, inline ayahs, page numbers, index table, top tabs.', badgeAr: 'تراثي', badgeEn: 'Heritage', icon: 'BookOpen' },
+  { id: 'cards', nameAr: 'الكروت الحديثة', nameEn: 'Modern Cards', descAr: 'كل آية بكرت لحالها بخط كبير وأزرار واضحة، وشاشة رئيسية بكروت كبيرة، وشريط تبويب عائم تحت.', descEn: 'One ayah per big card, card home, floating tab bar.', badgeAr: 'عصري', badgeEn: 'Modern', icon: 'LayoutTemplate' },
+  { id: 'minimal', nameAr: 'القارئ البسيط', nameEn: 'Minimal Reader', descAr: 'شاشة كاملة للنص فقط بدون أزرار، اضغط لإظهار الأدوات واسحب يمين/يسار للتنقل بين السور. قائمة سور نصية بسيطة.', descEn: 'Full-screen text, hidden chrome, swipe between surahs.', badgeAr: 'تركيز', badgeEn: 'Focus', icon: 'Sparkles' },
+  { id: 'grid', nameAr: 'لوحة المربعات', nameEn: 'Grid Dashboard', descAr: 'شاشة رئيسية بمربعات: السور، الأجزاء، الرقية، الأذكار، الصلاة… والسور كمربعات مرقمة، والقارئ مع شريط أرقام الآيات.', descEn: 'Tile dashboard home, square surah grid, ayah-number strip.', badgeAr: 'لوحة', badgeEn: 'Dashboard', icon: 'LayoutGrid' },
+  { id: 'drawer', nameAr: 'القائمة الجانبية', nameEn: 'Side Drawer List', descAr: 'قائمة مرتبة حسب الأجزاء مع قائمة جانبية ☰ بدل الشريط السفلي، والقارئ على شكل أسطر مرقمة.', descEn: 'List grouped by juz, side drawer nav, numbered-line reader.', badgeAr: 'قائمة ☰', badgeEn: 'Drawer', icon: 'Menu' },
 ];
+
+export const DESIGN_IDS = DESIGN_STYLES.map((d) => d.id);
 
 export const QURAN_FONTS: QuranFontConfig[] = [
   {

@@ -213,3 +213,10 @@ export function calculateQuranCompletionPercentage(progress: ReadingProgressData
   const pct = (readCount / TOTAL_QURAN_AYAHS) * 100;
   return Math.min(100, Math.round(pct * 10) / 10);
 }
+
+/** Saves the reading position only (used while scrolling), without counting ayahs as read. */
+export function saveLastReadOnly(surahNumber: number, ayahNumber: number, surahNameAr: string, surahNameEn: string): void {
+  const current = loadReadingProgress();
+  current.lastRead = { surahNumber, ayahNumber, surahNameAr, surahNameEn, timestamp: Date.now() };
+  saveReadingProgress(current);
+}

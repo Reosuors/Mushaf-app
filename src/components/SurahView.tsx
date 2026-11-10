@@ -4,6 +4,7 @@ import { Reciter, AyahData, QuranFontId, AyahCardData } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import { QURAN_FONTS } from '../data/designStyles';
 import { normalizeArabic } from '../utils/quranSearch';
+import { getSurahAyahs, getBasmalaText, stripBasmala, toArabicDigits } from '../utils/quranText';
 import { 
   getSurahOffline, 
   saveSurahOffline, 
@@ -15,6 +16,7 @@ import {
   toggleBookmark,
   loadReadingProgress,
   toggleSurahCompletion,
+  saveLastReadOnly,
 } from '../utils/readingProgress';
 import { hapticFeedback } from '../utils/haptics';
 import {
@@ -44,6 +46,9 @@ import {
   Image as ImageIcon,
   Maximize2,
   Minimize2,
+  Copy,
+  Share2,
+  Check,
 } from 'lucide-react';
 
 interface SurahViewProps {
@@ -62,6 +67,7 @@ interface SurahViewProps {
   onOpenRepeatModal: (surahNumber: number) => void;
   onOpenTafsir: (surahNumber: number, ayahNumber: number, text: string) => void;
   onOpenAyahCard?: (ayahData: AyahCardData) => void;
+  onNavigateSurah?: (surahNumber: number) => void;
 }
 
 export const SurahView: React.FC<SurahViewProps> = ({
@@ -80,6 +86,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
   onOpenRepeatModal,
   onOpenTafsir,
   onOpenAyahCard,
+  onNavigateSurah,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
@@ -90,6 +97,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
   const [isDownloaded, setIsDownloaded] = useState<boolean>(false);
   const [downloadingNow, setDownloadingNow] = useState<boolean>(false);
   const [isFromCache, setIsFromCache] = useState<boolean>(false);
+  const [basmala, setBasmala] = useState<string>('');
 
   // Reading progress and bookmarks state
   const [bookmarkedAyahs, setBookmarkedAyahs] = useState<number[]>([]);
@@ -113,6 +121,70 @@ export const SurahView: React.FC<SurahViewProps> = ({
   const surahInfo恒 = SURAHS.find((s) => s.n === surahNumber) || SURAHS[0];
   const surahInfo = surahInfo恒;
   const ayahRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
+
+  const ayahReference = (n: number) => `[${surahInfo.ar}: ${toArabicDigits(n)}]`;
+  const ayahShareText = (n: number, text: string) => `﴿${text}﴾ ${ayahReference(n)}`;
+
+  const handleCopyAyah = async (n: number, text: string) => {
+    hapticFeedback.light();
+    const value = ayahShareText(n, text);
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ }
+      ta.remove();
+    }
+    setCopiedAyah(n);
+    setTimeout(() => setCopiedAyah((c) => (c === n ? null : c)), 1800);
+  };
+
+  const handleShareAyah = async (n: number, text: string) => {
+    const value = ayahShareText(n, text);
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: value });
+        return;
+      } catch {
+        /* user cancelled */
+        return;
+      }
+    }
+    handleCopyAyah(n, text);
+  };
+
+  // Remember where the reader is while scrolling (continue-reading)
+  useEffect(() => {
+    if (loading || ayahs.length === 0 || typeof IntersectionObserver === 'undefined') return;
+    let timer: number | undefined;
+    const visible = new Map<number, number>();
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const n = Number((e.target as HTMLElement).dataset.ayah);
+          if (e.isIntersecting) visible.set(n, e.boundingClientRect.top);
+          else visible.delete(n);
+        }
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          if (visible.size === 0) return;
+          const top = Math.min(...visible.keys());
+          saveLastReadOnly(surahNumber, top, surahInfo.ar, surahInfo.en);
+          setLastReadAyahNumber(top);
+        }, 800);
+      },
+      { threshold: 0.6 }
+    );
+    Object.values(ayahRefs.current).forEach((el) => el && obs.observe(el as Element));
+    return () => {
+      window.clearTimeout(timer);
+      obs.disconnect();
+    };
+  }, [loading, ayahs, surahNumber, viewMode]);
 
   // Sync Reading progress and bookmarks
   const refreshProgress = () => {
@@ -166,55 +238,24 @@ export const SurahView: React.FC<SurahViewProps> = ({
       setLoading(true);
       setErrorMsg(null);
 
-      // Check if already in IndexedDB
       try {
-        const cached = await getSurahOffline(surahNumber);
-        if (cached && cached.length > 0 && !isCancelled) {
-          setAyahs(cached);
-          setIsDownloaded(true);
-          setIsFromCache(true);
-          setLoading(false);
-          // Auto scroll to initial ayah if given
-          if (initialAyahNumber) {
-            setTimeout(() => {
-              ayahRefs.current[initialAyahNumber]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
-          }
-          return;
-        }
-      } catch (e) {
-        console.warn('Could not read IndexedDB cache:', e);
-      }
-
-      // If not in cache, fetch from API and cache automatically
-      try {
-        const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-        const data = await res.json();
-        if (data.code === 200 && !isCancelled) {
-          const loadedAyahs: AyahData[] = data.data.ayahs || [];
-          setAyahs(loadedAyahs);
-          setIsFromCache(false);
-          // Cache in IndexedDB in background
-          saveSurahOffline(surahNumber, loadedAyahs).then(() => {
-            if (!isCancelled) setIsDownloaded(true);
-          }).catch(() => {});
-
-          // Auto scroll to initial ayah if given
-          if (initialAyahNumber) {
-            setTimeout(() => {
-              ayahRefs.current[initialAyahNumber]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
-          }
-        } else {
-          throw new Error(data.status || 'Failed to load verses');
+        const loadedAyahs = await getSurahAyahs(surahNumber);
+        if (isCancelled) return;
+        setAyahs(loadedAyahs);
+        setBasmala(await getBasmalaText());
+        setIsDownloaded(true);
+        setIsFromCache(true);
+        if (initialAyahNumber) {
+          setTimeout(() => {
+            ayahRefs.current[initialAyahNumber]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
         }
       } catch (err: any) {
         if (!isCancelled) {
-          // If offline and not in cache
           setErrorMsg(
-            navigator.onLine 
-              ? (err?.message || t.errLoad) 
-              : (isRtl ? 'أنت غير متصل بالإنترنت ولم يتم تحميل هذه السورة مسبقاً. يمكنك فتح السور المحفوظة.' : 'You are offline and this surah is not cached yet.')
+            navigator.onLine
+              ? (isRtl ? 'تعذّر تحميل نص القرآن. حاول مرة ثانية.' : 'Could not load the Quran text. Please try again.')
+              : (isRtl ? 'أنت غير متصل بالإنترنت. افتح التطبيق مرة واحدة مع الإنترنت ليشتغل بعدها بدون نت.' : 'You are offline. Open the app once online so it works offline afterwards.')
           );
         }
       } finally {
@@ -258,10 +299,10 @@ export const SurahView: React.FC<SurahViewProps> = ({
   }, [currentPlayingAyah]);
 
   const handleJump = () => {
-    const target地理 = parseInt(jumpAyah, 10);
-    if (!isNaN(target地理) && target地理 >= 1 && target地理 <= (surahInfo?.a || 1)) {
+    const targetAyah = parseInt(jumpAyah, 10);
+    if (!isNaN(targetAyah) && targetAyah >= 1 && targetAyah <= (surahInfo?.a || 1)) {
       hapticFeedback.navigation();
-      ayahRefs.current[target地理]?.scrollIntoView({
+      ayahRefs.current[targetAyah]?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
@@ -272,7 +313,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
   const filteredAyahs = ayahs.filter((a) => {
     if (!filterQuery) return true;
     const qNorm = normalizeArabic(filterQuery);
-    const aNorm = normalizeArabic(a.text);
+    const aNorm = normalizeArabic(stripBasmala(surahNumber, a.numberInSurah, a.text));
     return (
       aNorm.includes(qNorm) ||
       a.text.includes(filterQuery) ||
@@ -283,7 +324,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto p-3 sm:p-6 pb-28 space-y-4 animate-fade-in">
       {/* Top Navigation Bar */}
-      <div className="bg-[var(--bg2)]/95 border border-[var(--border2)] rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm sticky top-2 z-20 backdrop-blur-md">
+      <div className="bg-[var(--bg2)]/95 border border-[var(--border2)] rounded-2xl p-2.5 sm:p-4 flex flex-wrap items-center justify-between gap-2 shadow-sm sticky top-2 z-20 backdrop-blur-md">
         <button
           onClick={() => {
             hapticFeedback.navigation();
@@ -306,7 +347,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
             )}
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-[0.65rem] text-[var(--text3)]">
+            <span className="text-[0.65rem] text-[var(--text3)] whitespace-nowrap">
               {surahInfo.n} · {surahInfo.a} {t.ayah} ·{' '}
               {surahInfo.t === 'm' || surahInfo.t === 'مكية' ? (t.makki || 'مكية') : (t.madani || 'مدنية')}
             </span>
@@ -319,7 +360,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
         </div>
 
         {/* Top Quick Actions: Offline & Mode Switcher with Writing */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center order-last sm:order-none">
           {!isDownloaded && (
             <button
               onClick={() => {
@@ -395,7 +436,16 @@ export const SurahView: React.FC<SurahViewProps> = ({
         </div>
 
         {/* Play & Repeat Controls */}
-        <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+          <button
+            onClick={() => onPlayAyah(surahNumber, 1)}
+            className="flex items-center gap-2 bg-[var(--bg2)] border border-[var(--gold)]/50 text-[var(--gold2)] font-bold px-4 py-2.5 rounded-2xl text-xs sm:text-sm active:scale-95 transition-all cursor-pointer"
+            title="تشغيل آية بآية مع تظليل الآية والانتقال التلقائي"
+          >
+            <Volume2 className="w-4 h-4" />
+            <span>استماع آية بآية</span>
+          </button>
+
           <button
             onClick={() => onPlaySurah(surahNumber)}
             className="flex items-center gap-2 bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold px-6 py-2.5 rounded-2xl text-xs sm:text-sm shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
@@ -480,94 +530,6 @@ export const SurahView: React.FC<SurahViewProps> = ({
         </div>
       </div>
 
-      {/* Prominent Reading Mode Selector with Clear Labels & Descriptions */}
-      <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-2.5 sm:p-3 shadow-sm">
-        <div className="text-[0.68rem] font-bold text-[var(--text3)] mb-2 px-1 flex items-center justify-between">
-          <span>{isRtl ? 'اختر أسلوب القراءة المفضل:' : 'Choose Reading Style:'}</span>
-          <span className="text-[var(--gold)]">
-            {viewMode === 'verse'
-              ? (isRtl ? 'الوضع الحالي: آية بآية' : 'Current: Verse by Verse')
-              : (isRtl ? 'الوضع الحالي: المصحف الكامل' : 'Current: Full Mushaf')}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {/* Option 1: Verse by Verse */}
-          <button
-            onClick={() => setViewMode('verse')}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-start ${
-              viewMode === 'verse'
-                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
-                : 'bg-[var(--bg3)] text-[var(--text)] hover:border-[var(--gold)]/40 border border-[var(--border2)]'
-            }`}
-          >
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                viewMode === 'verse' ? 'bg-black/15 text-black' : 'bg-[var(--gold)]/10 text-[var(--gold)]'
-              }`}
-            >
-              <List className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs sm:text-sm font-extrabold flex items-center justify-between">
-                <span>{isRtl ? '١. قراءة آية بآية (تفاعلي)' : '1. Verse by Verse (Interactive)'}</span>
-                {viewMode === 'verse' && (
-                  <span className="text-[0.62rem] bg-black/20 text-black px-2 py-0.5 rounded-full font-black">
-                    {isRtl ? 'مُفعّل ✓' : 'Active ✓'}
-                  </span>
-                )}
-              </div>
-              <p
-                className={`text-[0.7rem] mt-0.5 leading-tight ${
-                  viewMode === 'verse' ? 'text-black/85 font-medium' : 'text-[var(--text3)]'
-                }`}
-              >
-                {isRtl
-                  ? 'عرض تفصيلي لكل آية مع التفسير الميسر، التلاوة، والحفظ'
-                  : 'Individual verse cards with audio, tafsir and bookmarking'}
-              </p>
-            </div>
-          </button>
-
-          {/* Option 2: Full Continuous Quran */}
-          <button
-            onClick={() => setViewMode('continuous')}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-start ${
-              viewMode === 'continuous'
-                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
-                : 'bg-[var(--bg3)] text-[var(--text)] hover:border-[var(--gold)]/40 border border-[var(--border2)]'
-            }`}
-          >
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                viewMode === 'continuous' ? 'bg-black/15 text-black' : 'bg-[var(--gold)]/10 text-[var(--gold)]'
-              }`}
-            >
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs sm:text-sm font-extrabold flex items-center justify-between">
-                <span>{isRtl ? '٢. المصحف الكامل (متواصل)' : '2. Full Quran (Continuous)'}</span>
-                {viewMode === 'continuous' && (
-                  <span className="text-[0.62rem] bg-black/20 text-black px-2 py-0.5 rounded-full font-black">
-                    {isRtl ? 'مُفعّل ✓' : 'Active ✓'}
-                  </span>
-                )}
-              </div>
-              <p
-                className={`text-[0.7rem] mt-0.5 leading-tight ${
-                  viewMode === 'continuous' ? 'text-black/85 font-medium' : 'text-[var(--text3)]'
-                }`}
-              >
-                {isRtl
-                  ? 'قراءة متصلة كرسم المصحف الشريف لقراءة السورة كاملة والختمات'
-                  : 'Continuous traditional Mushaf page flow for smooth reading'}
-              </p>
-            </div>
-          </button>
-        </div>
-      </div>
-
       {/* Intra-Surah Search Input when in Verse-by-verse mode */}
       {viewMode === 'verse' && (
         <div className="relative">
@@ -591,13 +553,13 @@ export const SurahView: React.FC<SurahViewProps> = ({
       )}
 
       {/* Bismillah Header (except for Surah At-Tawbah 9) */}
-      {surahNumber !== 9 && surahNumber !== 1 && (
+      {surahNumber !== 9 && surahNumber !== 1 && basmala && !loading && !errorMsg && (
         <div className="my-6 text-center">
           <div
             className="font-quran text-2xl sm:text-3xl text-[var(--gold2)] dir-rtl select-none tracking-wide text-glow"
             style={{ fontFamily: quranFontFamily }}
           >
-            بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+            {basmala}
           </div>
         </div>
       )}
@@ -633,13 +595,12 @@ export const SurahView: React.FC<SurahViewProps> = ({
             {ayahs.map((ayah) => {
               const isCurrent = currentPlayingAyah === ayah.numberInSurah;
               let displayText = ayah.text;
-              if (surahNumber !== 1 && ayah.numberInSurah === 1) {
-                displayText = displayText.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', '').trim();
-              }
+              displayText = stripBasmala(surahNumber, ayah.numberInSurah, displayText);
               return (
                 <span
                   key={ayah.number}
                   ref={(el) => (ayahRefs.current[ayah.numberInSurah] = el)}
+                data-ayah={ayah.numberInSurah}
                   onClick={() => onPlayAyah(surahNumber, ayah.numberInSurah)}
                   className={`cursor-pointer transition-all duration-200 rounded-md px-1 inline ${
                     isCurrent
@@ -650,7 +611,7 @@ export const SurahView: React.FC<SurahViewProps> = ({
                 >
                   {displayText}{' '}
                   <span className="font-sans text-[0.7em] text-[var(--gold)] font-bold inline-block mx-1 select-none">
-                    ﴿{ayah.numberInSurah}﴾
+                    ﴿{toArabicDigits(ayah.numberInSurah)}﴾
                   </span>{' '}
                 </span>
               );
@@ -665,15 +626,14 @@ export const SurahView: React.FC<SurahViewProps> = ({
           {filteredAyahs.map((ayah) => {
             const isAyahActive = currentPlayingAyah === ayah.numberInSurah;
             let displayText = ayah.text;
-            if (surahNumber !== 1 && ayah.numberInSurah === 1) {
-              displayText = displayText.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', '').trim();
-            }
+            displayText = stripBasmala(surahNumber, ayah.numberInSurah, displayText);
 
             return (
               <div
                 key={ayah.number}
                 ref={(el) => (ayahRefs.current[ayah.numberInSurah] = el)}
-                className={`border rounded-2xl p-4 sm:p-5 transition-all duration-200 ${
+                data-ayah={ayah.numberInSurah}
+                className={`verse-card border rounded-2xl p-4 sm:p-5 transition-all duration-200 ${
                   isAyahActive
                     ? 'bg-[var(--gold)]/10 border-[var(--gold)] shadow-md ring-1 ring-[var(--gold)]/40'
                     : 'bg-[var(--bg2)] border-[var(--border2)] hover:border-[var(--gold)]/30'
@@ -682,11 +642,11 @@ export const SurahView: React.FC<SurahViewProps> = ({
                 {/* Ayah Actions Bar */}
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--border2)]/50 mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center font-sans text-xs font-bold text-[var(--gold2)]">
-                      {ayah.numberInSurah}
+                    <span className="verse-num w-7 h-7 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center font-sans text-xs font-bold text-[var(--gold2)]">
+                      {toArabicDigits(ayah.numberInSurah)}
                     </span>
-                    <span className="text-[0.68rem] text-[var(--text3)]">
-                      {surahInfo.ar} : {ayah.numberInSurah}
+                    <span className="text-[0.68rem] text-[var(--text3)] whitespace-nowrap">
+                      الجزء {toArabicDigits(ayah.juz)} · ص {toArabicDigits(ayah.page || 0)}{ayah.sajda ? ' · سجدة' : ''}
                     </span>
                   </div>
 
@@ -726,6 +686,24 @@ export const SurahView: React.FC<SurahViewProps> = ({
                       ) : (
                         <Play className="w-3.5 h-3.5 fill-current" />
                       )}
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyAyah(ayah.numberInSurah, displayText)}
+                      className="p-1.5 rounded-lg transition-all cursor-pointer bg-[var(--bg3)] text-[var(--gold)] hover:bg-[var(--gold)]/10"
+                      title="نسخ الآية مع المرجع"
+                      aria-label="نسخ الآية"
+                    >
+                      {copiedAyah === ayah.numberInSurah ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <button
+                      onClick={() => handleShareAyah(ayah.numberInSurah, displayText)}
+                      className="p-1.5 rounded-lg transition-all cursor-pointer bg-[var(--bg3)] text-[var(--gold)] hover:bg-[var(--gold)]/10"
+                      title="مشاركة الآية"
+                      aria-label="مشاركة الآية"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
                     </button>
 
                     <button
@@ -803,6 +781,28 @@ export const SurahView: React.FC<SurahViewProps> = ({
                 ? (isRtl ? 'تم تحديد السورة كمكتملة في الختمة ✓' : 'Marked as Completed in Khatma ✓')
                 : (isRtl ? 'تحديد السورة كمقروءة / مكتملة' : 'Mark Surah as Read & Completed')}
             </span>
+          </button>
+        </div>
+      )}
+
+      {/* Previous / next surah */}
+      {!loading && !errorMsg && onNavigateSurah && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={surahNumber >= 114}
+            onClick={() => onNavigateSurah(surahNumber + 1)}
+            className="flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-[var(--bg2)] border border-[var(--border2)] text-sm font-bold text-[var(--gold2)] disabled:opacity-40 cursor-pointer active:scale-95 transition-all"
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span>{surahNumber < 114 ? `السورة التالية: ${SURAHS[surahNumber].ar}` : 'آخر سورة'}</span>
+          </button>
+          <button
+            disabled={surahNumber <= 1}
+            onClick={() => onNavigateSurah(surahNumber - 1)}
+            className="flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-[var(--bg2)] border border-[var(--border2)] text-sm font-bold text-[var(--gold2)] disabled:opacity-40 cursor-pointer active:scale-95 transition-all"
+          >
+            <span>{surahNumber > 1 ? `السورة السابقة: ${SURAHS[surahNumber - 2].ar}` : 'أول سورة'}</span>
+            <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
       )}
