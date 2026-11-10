@@ -14,7 +14,21 @@ function rateLimited(ip: string): boolean {
   return list.length > LIMIT;
 }
 
+// The Android (Capacitor) and desktop (Electron) apps call this endpoint from their own origins.
+const APP_ORIGINS = ['https://localhost', 'capacitor://localhost', 'http://localhost', 'app://mushaf'];
+
 export default async function handler(req: any, res: any) {
+  const origin = req.headers?.origin;
+  if (origin && APP_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
   const key = process.env.GEMINI_API_KEY;
   if (req.method === 'GET') {
     res.status(200).json({ ok: true, configured: !!key });

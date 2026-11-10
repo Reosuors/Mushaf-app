@@ -1,0 +1,65 @@
+name: Build Desktop App (Windows + macOS)
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'android-widget/**'
+  workflow_dispatch:
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+            out: out/Mushaf_Setup.exe
+          - os: macos-latest
+            target: --mac
+            out: out/Mushaf.dmg
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Build web app
+      shell: bash
+      run: |
+        npm install
+        npm run build
+
+    - name: Stage desktop app (built web app + Electron shell only)
+      shell: bash
+      run: |
+        mkdir -p desktop-app/electron
+        cp -r dist desktop-app/dist
+        cp electron/main.cjs desktop-app/electron/main.cjs
+        cp electron/electron-builder.json desktop-app/electron-builder.json
+        cp public/icon.png desktop-app/electron/icon.png
+        cd desktop-app
+        node -e "require('fs').writeFileSync('package.json', JSON.stringify({name:'mushaf', productName:'Mushaf', version:'1.0.${{ github.run_number }}', description:'Mushaf - Quran app', author:'Ahmad', main:'electron/main.cjs', private:true}, null, 2))"
+        npm install --save-dev electron@33 electron-builder@25
+
+    - name: Build installer (unsigned)
+      shell: bash
+      env:
+        CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      run: |
+        cd desktop-app
+        npx electron-builder ${{ matrix.target }} --config electron-builder.json --publish never
+        ls -la out
+
+    - name: Upload installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: desktop-${{ runner.os }}
+        path: desktop-app/${{ matrix.out }}

@@ -3,6 +3,13 @@ import { Send, Loader2, BookOpen, KeyRound, ShieldAlert } from 'lucide-react';
 import { SURAHS } from '../data/surahs';
 import { searchQuranLocal, getDisplayAyahText, toArabicDigits, arabicSkeleton } from '../utils/quranText';
 
+/** The web app on Vercel calls its own /api/chat. The Android app (Capacitor) and the desktop app (Electron)
+ *  have no server of their own, so they call the same endpoint on the Vercel deployment. */
+const VERCEL_ORIGIN = 'https://mishafapp32.vercel.app';
+const IS_PACKAGED_APP =
+  !!(window as any).Capacitor?.isNativePlatform?.() || location.protocol === 'app:' || location.protocol === 'file:';
+const CHAT_API = IS_PACKAGED_APP ? VERCEL_ORIGIN + '/api/chat' : '/api/chat';
+
 interface Citation {
   type: 'quran' | 'hadith' | 'other';
   surah?: number;
@@ -73,7 +80,7 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
       setStatus('no_key');
       return;
     }
-    fetch('/api/chat', { method: 'GET' })
+    fetch(CHAT_API, { method: 'GET' })
       .then((r) => (r.ok && (r.headers.get('content-type') || '').includes('json') ? r.json() : null))
       .then((j) => alive && setStatus(j && j.configured ? 'ready' : 'no_key'))
       .catch(() => alive && setStatus('no_key'));
@@ -95,7 +102,7 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
     setBusy(true);
     try {
       const ground = await groundAyahs(q).catch(() => []);
-      const r = await fetch('/api/chat', {
+      const r = await fetch(CHAT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, ground, history }),

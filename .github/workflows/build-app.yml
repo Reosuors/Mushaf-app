@@ -30,6 +30,12 @@ jobs:
     - name: Build Web Assets
       run: npm run build
 
+    - name: Drop the gzip copy of the Quran text (Android packs assets itself; a .gz beside the .txt collides)
+      run: |
+        rm -f dist/quran/quran-uthmani.txt.gz
+        sed -i 's#,"/quran/quran-uthmani.txt.gz"##; s#"/quran/quran-uthmani.txt.gz",##' dist/sw.js
+        ! grep -q "quran-uthmani.txt.gz" dist/sw.js
+
     - name: Initialize Capacitor
       run: |
         npx cap init "Mushaf" com.ahmad.mushaf --web-dir dist || true
