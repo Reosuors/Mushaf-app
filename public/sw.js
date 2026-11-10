@@ -3,7 +3,7 @@
  */
 const VERSION = '__BUILD_VERSION__';
 const STATIC_CACHE = 'mushaf-static-' + VERSION;
-const RUNTIME_CACHE = 'mushaf-runtime-v3';
+const RUNTIME_CACHE = 'mushaf-runtime-v4';
 const PRECACHE = __PRECACHE_MANIFEST__;
 
 self.addEventListener('install', (event) => {
@@ -31,6 +31,9 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+
+  // The server API (اسأل chat) is never cached: always the live answer
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return;
 
   // Audio streams (range requests) go straight to the network
   if (isAudio(url, request)) return;

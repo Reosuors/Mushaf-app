@@ -1,6 +1,5 @@
 // Vercel serverless function: POST /api/chat  — religious Q&A ("اسأل").
 // Needs the environment variable GEMINI_API_KEY (Vercel → Settings → Environment Variables).
-import { GoogleGenAI } from '@google/genai';
 import { answerQuestion, Generate } from './_chatCore.js';
 
 const hits = new Map<string, number[]>();
@@ -17,7 +16,36 @@ function rateLimited(ip: string): boolean {
 // The Android (Capacitor) and desktop (Electron) apps call this endpoint from their own origins.
 const APP_ORIGINS = ['https://localhost', 'capacitor://localhost', 'http://localhost', 'app://mushaf'];
 
+// gemini-2.5-flash is deprecated and closed to new keys (new "AQ." keys get 401 ACCESS_TOKEN_TYPE_UNSUPPORTED on it).
+const DEFAULT_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash-lite'];
+function modelsToTry(): string[] {
+  const own = (process.env.GEMINI_MODEL || '').trim();
+  return own ? [own, ...DEFAULT_MODELS.filter((m) => m !== own)] : DEFAULT_MODELS;
+}
+
+async function callGemini(key: string, model: string, system: string, user: string): Promise<string> {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: 'user', parts: [{ text: user }] }],
+      generationConfig: { maxOutputTokens: 2048, temperature: 0.2, responseMimeType: 'application/json' },
+    }),
+  });
+  const text = await r.text();
+  if (!r.ok) {
+    const err: any = new Error(`${model}: ${text.slice(0, 400)}`);
+    err.status = r.status;
+    throw err;
+  }
+  const j = JSON.parse(text);
+  const parts = j?.candidates?.[0]?.content?.parts || [];
+  return parts.filter((p: any) => !p.thought && typeof p.text === 'string').map((p: any) => p.text).join('');
+}
+
 export default async function handler(req: any, res: any) {
+  res.setHeader('Cache-Control', 'no-store');
   const origin = req.headers?.origin;
   if (origin && APP_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -29,7 +57,7 @@ export default async function handler(req: any, res: any) {
     res.status(204).end();
     return;
   }
-  const key = process.env.GEMINI_API_KEY;
+  const key = (process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '') || undefined;
   if (req.method === 'GET') {
     res.status(200).json({ ok: true, configured: !!key });
     return;
@@ -45,14 +73,18 @@ export default async function handler(req: any, res: any) {
   }
   let generate: Generate | null = null;
   if (key) {
-    const ai = new GoogleGenAI({ apiKey: key });
     generate = async (system, user) => {
-      const r = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-        contents: user,
-        config: { systemInstruction: system, maxOutputTokens: 700, temperature: 0.2, responseMimeType: 'application/json' },
-      });
-      return r.text || '';
+      let lastErr: any = null;
+      for (const model of modelsToTry()) {
+        try {
+          return await callGemini(key, model, system, user);
+        } catch (e: any) {
+          lastErr = e;
+          // Try the next model only when this one is unavailable to this key; other errors stop here.
+          if (![400, 401, 403, 404].includes(Number(e?.status))) throw e;
+        }
+      }
+      throw lastErr || new Error('no model available');
     };
   }
   try {

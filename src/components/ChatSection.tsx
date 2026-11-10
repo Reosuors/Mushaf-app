@@ -73,14 +73,15 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    let alive = true;
+  const checkStatus = React.useCallback(() => {
     // The tab.bot demo copy is static (no server, no key): show the "needs key" state without calling.
     if (location.hostname.endsWith('.sites.tab.bot')) {
       setStatus('no_key');
-      return;
+      return () => {};
     }
-    fetch(CHAT_API, { method: 'GET' })
+    let alive = true;
+    setStatus((s) => (s === 'ready' ? s : 'checking'));
+    fetch(CHAT_API + (CHAT_API.includes('?') ? '&' : '?') + 't=' + Date.now(), { method: 'GET', cache: 'no-store' })
       .then((r) => (r.ok && (r.headers.get('content-type') || '').includes('json') ? r.json() : null))
       .then((j) => alive && setStatus(j && j.configured ? 'ready' : 'no_key'))
       .catch(() => alive && setStatus('no_key'));
@@ -89,13 +90,26 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
     };
   }, []);
 
+  // Re-check every time the chat tab opens and whenever the app comes back to the foreground.
+  useEffect(() => {
+    const stop = checkStatus();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkStatus();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [checkStatus]);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [msgs, busy]);
 
   const send = async () => {
     const q = input.trim();
-    if (!q || busy || status !== 'ready') return;
+    if (!q || busy || status === 'no_key') return;
     const history = msgs.slice(-6).map((m) => ({ role: m.role, text: m.text }));
     setMsgs((m) => [...m, { role: 'user', text: q }]);
     setInput('');
@@ -106,10 +120,12 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, ground, history }),
+        cache: 'no-store',
       });
       const j = await r.json().catch(() => null);
       if (!j) throw new Error('bad');
       if (j.error === 'no_key') setStatus('no_key');
+      else if (j.ok) setStatus('ready');
       setMsgs((m) => [...m, { role: 'assistant', text: j.answer || 'لا أعلم.', citations: j.citations || [], refused: j.onTopic === false }]);
     } catch {
       setMsgs((m) => [...m, { role: 'assistant', text: 'ما قدرت أوصل للخادم، تأكد من الإنترنت وجرّب مرة ثانية.' }]);
@@ -144,6 +160,14 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
           <p className="text-[0.75rem] text-[var(--text2)] leading-relaxed">
             خدمة "اسأل" بتشتغل لما ينحط مفتاح GEMINI_API_KEY بإعدادات الموقع على Vercel. باقي التطبيق شغال عادي.
           </p>
+          <button
+            type="button"
+            onClick={() => checkStatus()}
+            className="mt-1 px-4 py-1.5 rounded-xl bg-[var(--gold)] text-black text-xs font-bold cursor-pointer"
+            data-testid="chat-retry"
+          >
+            إعادة المحاولة
+          </button>
         </div>
       )}
 
@@ -192,15 +216,15 @@ export const ChatSection: React.FC<{ lang: string; onOpenAyah: (s: number, a: nu
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={status !== 'ready'}
+          disabled={status === 'no_key'}
           maxLength={500}
-          placeholder={status === 'ready' ? 'اكتب سؤالك الديني هون…' : 'غير مفعّل بعد'}
+          placeholder={status === 'no_key' ? 'غير مفعّل بعد' : 'اكتب سؤالك الديني هون…'}
           aria-label="سؤالك"
           className="flex-1 bg-transparent px-2 py-2 text-sm text-[var(--text)] focus:outline-none disabled:opacity-50"
         />
         <button
           type="submit"
-          disabled={status !== 'ready' || busy || !input.trim()}
+          disabled={status === 'no_key' || busy || !input.trim()}
           aria-label="إرسال"
           className="w-10 h-10 rounded-xl bg-[var(--gold)] text-black flex items-center justify-center disabled:opacity-40 cursor-pointer"
         >

@@ -6,7 +6,7 @@ import './index.css';
 // Register Service Worker for full offline capabilities
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => reg.update().catch(() => {})).catch((err) => {
       console.log('SW registration note:', err);
     });
   });
