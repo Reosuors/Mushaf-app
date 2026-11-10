@@ -41,7 +41,7 @@
     ],
     "icon": "electron/icon.png",
     "category": "public.app-category.lifestyle",
-    "identity": "-",
+    "identity": null,
     "hardenedRuntime": false,
     "gatekeeperAssess": false
   },

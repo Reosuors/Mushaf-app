@@ -49,13 +49,28 @@ jobs:
         node -e "require('fs').writeFileSync('package.json', JSON.stringify({name:'mushaf', productName:'Mushaf', version:'1.0.${{ github.run_number }}', description:'Mushaf - Quran app', author:'Ahmad', main:'electron/main.cjs', private:true}, null, 2))"
         npm install --save-dev electron@33 electron-builder@25
 
-    - name: Build installer (unsigned)
+    - name: Build Windows installer (unsigned)
+      if: runner.os == 'Windows'
       shell: bash
       env:
         CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       run: |
         cd desktop-app
-        npx electron-builder ${{ matrix.target }} --config electron-builder.json --publish never
+        npx electron-builder --win --config electron-builder.json --publish never
+        ls -la out
+
+    - name: Build macOS app, ad-hoc sign it (so Apple Silicon Macs can open it), then make the DMG
+      if: runner.os == 'macOS'
+      shell: bash
+      env:
+        CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      run: |
+        cd desktop-app
+        npx electron-builder --mac dir --universal --config electron-builder.json --publish never
+        APP=out/mac-universal/Mushaf.app
+        codesign --force --deep --sign - "$APP"
+        codesign --verify --deep --strict --verbose=2 "$APP"
+        npx electron-builder --mac dmg --universal --prepackaged "$APP" --config electron-builder.json --publish never
         ls -la out
 
     - name: Upload installer
