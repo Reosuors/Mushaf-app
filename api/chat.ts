@@ -60,6 +60,10 @@ export default async function handler(req: any, res: any) {
     const out = await answerQuestion(body, generate);
     res.status(out.error === 'no_key' ? 503 : 200).json(out);
   } catch (e: any) {
-    res.status(500).json({ ok: false, error: 'server', answer: 'صار خطأ بالخادم، جرّب مرة ثانية.' });
+    const raw = String(e?.message || e || 'unknown');
+    const detail = (key ? raw.split(key).join('[key]') : raw).replace(/AIza[0-9A-Za-z_\-]{20,}|AQ\.[0-9A-Za-z_\-.]{20,}/g, '[key]').slice(0, 600);
+    const status = e?.status || e?.code || e?.error?.code || null;
+    console.error('[api/chat] generate failed', status, detail);
+    res.status(500).json({ ok: false, error: 'server', status, detail, answer: 'صار خطأ بالخادم، جرّب مرة ثانية.' });
   }
 }
