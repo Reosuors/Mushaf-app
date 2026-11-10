@@ -23,8 +23,26 @@ function modelsToTry(): string[] {
   return own ? [own, ...DEFAULT_MODELS.filter((m) => m !== own)] : DEFAULT_MODELS;
 }
 
+const HOSTS = [
+  (m: string) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, // Google AI Studio key
+  (m: string) => `https://aiplatform.googleapis.com/v1/publishers/google/models/${m}:generateContent`, // Vertex AI express-mode key
+];
+
 async function callGemini(key: string, model: string, system: string, user: string): Promise<string> {
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  let last: any = null;
+  for (const host of HOSTS) {
+    try {
+      return await callHost(host(model), key, model, system, user);
+    } catch (e: any) {
+      if (!last) last = e; // keep the AI Studio answer as the one reported
+      if (![401, 403].includes(Number(e?.status))) throw e;
+    }
+  }
+  throw last;
+}
+
+async function callHost(url: string, key: string, model: string, system: string, user: string): Promise<string> {
+  const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
