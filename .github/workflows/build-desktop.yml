@@ -8,6 +8,10 @@ on:
       - 'android-widget/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   desktop:
     strategy:
@@ -17,9 +21,11 @@ jobs:
           - os: windows-latest
             target: --win
             out: out/Mushaf_Setup.exe
+            asset: Mushaf-Setup.exe
           - os: macos-latest
             target: --mac
             out: out/Mushaf.dmg
+            asset: Mushaf.dmg
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -31,11 +37,23 @@ jobs:
       with:
         node-version: 22
 
-    - name: Build web app
+    - name: Use the same version number as the Android build of this commit
       shell: bash
       env:
-        VITE_APP_VERSION: 1.0.${{ github.run_number }}
+        GH_TOKEN: ${{ github.token }}
       run: |
+        N=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/build-app.yml/runs?head_sha=${GITHUB_SHA}&per_page=1" --jq '.workflow_runs[0].run_number // empty' 2>/dev/null || true)
+        if [ -n "$N" ]; then V="1.0.$N"; else
+          V=$(gh release view --repo "${GITHUB_REPOSITORY}" --json tagName -q .tagName 2>/dev/null | sed 's/^v//')
+          [ -n "$V" ] || V="1.0.${{ github.run_number }}"
+        fi
+        echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+        echo "Version: $V"
+
+    - name: Build web app
+      shell: bash
+      run: |
+        export VITE_APP_VERSION="$APP_VERSION"
         npm install
         npm run build
 
@@ -48,7 +66,7 @@ jobs:
         cp electron/electron-builder.json desktop-app/electron-builder.json
         cp public/icon.png desktop-app/electron/icon.png
         cd desktop-app
-        node -e "require('fs').writeFileSync('package.json', JSON.stringify({name:'mushaf', productName:'Mushaf', version:'1.0.${{ github.run_number }}', description:'Mushaf - Quran app', author:'Ahmad', main:'electron/main.cjs', private:true}, null, 2))"
+        node -e "require('fs').writeFileSync('package.json', JSON.stringify({name:'mushaf', productName:'Mushaf', version:process.env.APP_VERSION, description:'Mushaf - Quran app', author:'Ahmad', main:'electron/main.cjs', private:true}, null, 2))"
         npm install --save-dev electron@33 electron-builder@25
 
     - name: Build Windows installer (unsigned)
@@ -80,3 +98,9 @@ jobs:
       with:
         name: desktop-${{ runner.os }}
         path: desktop-app/${{ matrix.out }}
+
+    - name: Publish installer to the GitHub Release (permanent link releases/latest/download/${{ matrix.asset }})
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: bash scripts/publish-release.sh "$APP_VERSION" "desktop-app/${{ matrix.out }}" "${{ matrix.asset }}"
