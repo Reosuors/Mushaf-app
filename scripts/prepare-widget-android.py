@@ -25,7 +25,7 @@ if "WidgetBridgePlugin" not in text:
     )
     text = text.replace(
         "import com.getcapacitor.BridgeActivity;",
-        "import com.getcapacitor.BridgeActivity;\n\nimport com.ahmad.mushaf.WidgetBridgePlugin;",
+        "import com.getcapacitor.BridgeActivity;\n\nimport com.ahmad.mushaf.WidgetBridgePlugin;\nimport com.ahmad.mushaf.PlayBillingPlugin;",
         1,
     )
     text = text.replace(
@@ -34,6 +34,7 @@ if "WidgetBridgePlugin" not in text:
         "    @Override\n"
         "    public void onCreate(Bundle savedInstanceState) {\n"
         "        registerPlugin(WidgetBridgePlugin.class);\n"
+        "        registerPlugin(PlayBillingPlugin.class);\n"
         "        super.onCreate(savedInstanceState);\n"
         "    }",
         1,
@@ -50,6 +51,10 @@ permissions = """    <uses-permission android:name=\"android.permission.ACCESS_C
 if "android.permission.ACCESS_FINE_LOCATION" not in text:
     start = text.find(">", text.find("<manifest ")) + 1
     text = text[:start] + "\n" + permissions + text[start:]
+# Google Play Billing (donations in the Play install): declared explicitly as well as by the library.
+if "com.android.vending.BILLING" not in text:
+    start = text.find(">", text.find("<manifest ")) + 1
+    text = text[:start] + "\n    <uses-permission android:name=\"com.android.vending.BILLING\" />\n" + text[start:]
 
 receivers = """        <receiver
             android:name=\".MushafWidgetProvider\"
@@ -73,3 +78,17 @@ receivers = """        <receiver
 if "android:name=\".PrayerWidgetProvider\"" not in text:
     text = text.replace("</application>", receivers + "    </application>", 1)
 manifest.write_text(text)
+
+# Google Play Billing Library (Play requires version 8 or later; 9.x is current).
+app_gradle = root / "android/app/build.gradle"
+g = app_gradle.read_text()
+if "com.android.billingclient:billing" not in g:
+    g += """
+
+// MUSHAF_PLAY_BILLING: one-time consumable "support_*" donations in the Google Play install
+dependencies {
+    implementation "com.android.billingclient:billing:9.1.0"
+}
+"""
+    app_gradle.write_text(g)
+print("widgets + Play Billing prepared")
