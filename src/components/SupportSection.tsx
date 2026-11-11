@@ -62,7 +62,7 @@ export const SupportSection: React.FC<SupportSectionProps> = ({ lang }) => {
           {mode === 'external' && (
             <a
               id="kofi-donation-btn"
-              href="https://ko-fi.com"
+              href="https://ko-fi.com/mushaf_islamic"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[var(--gold)] text-black font-extrabold px-8 py-3.5 rounded-2xl text-sm shadow-xl hover:bg-[var(--gold2)] active:scale-95 transition-all cursor-pointer"
