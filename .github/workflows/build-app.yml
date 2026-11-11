@@ -9,6 +9,9 @@ on:
       - '**.md'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -135,6 +138,11 @@ jobs:
         path: |
           release/Mushaf_release.apk
           release/Mushaf_release.aab
+
+    - name: Publish APK to the GitHub Release (permanent link releases/latest/download/Mushaf.apk)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: bash scripts/publish-release.sh "1.0.${{ github.run_number }}" release/Mushaf_release.apk Mushaf.apk
 
     - name: Verify signatures and widgets
       if: always()
