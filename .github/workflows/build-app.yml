@@ -144,6 +144,11 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: bash scripts/publish-release.sh "1.0.${{ github.run_number }}" release/Mushaf_release.apk Mushaf.apk
 
+    - name: Publish AAB to the same GitHub Release (for Google Play upload — releases/latest/download/Mushaf.aab)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: bash scripts/publish-release.sh "1.0.${{ github.run_number }}" release/Mushaf_release.aab Mushaf.aab
+
     - name: Verify signatures and widgets
       if: always()
       continue-on-error: true
@@ -154,4 +159,6 @@ jobs:
         keytool -printcert -jarfile release/Mushaf_release.aab | grep -E "SHA1|SHA256"
         "$BT/aapt2" dump badging release/Mushaf_release.apk | grep -E "^package|sdkVersion|targetSdkVersion"
         "$BT/aapt2" dump xmltree --file AndroidManifest.xml release/Mushaf_release.apk | grep -E "WidgetProvider" 
+        "$BT/aapt2" dump permissions release/Mushaf_release.apk | grep -E "BILLING"
+        unzip -l release/Mushaf_release.apk | grep -c "classes" || true
         rm -f "$RUNNER_TEMP/upload.jks"
