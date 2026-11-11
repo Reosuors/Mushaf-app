@@ -19,7 +19,7 @@ for attempt in 1 2 3 4 5; do
   if gh release view "$TAG" >/dev/null 2>&1; then break; fi
   PREV="$(gh release view --json tagName -q .tagName 2>/dev/null || true)"
   if gh release create "$TAG" --title "Mushaf $VERSION" --target "$GITHUB_SHA" --latest=false \
-       --notes "Mushaf $VERSION — Android (Mushaf.apk), Windows (Mushaf-Setup.exe), Mac (Mushaf.dmg). Web: https://mishafapp32.vercel.app"; then
+       --notes "Mushaf $VERSION — Android (Mushaf.apk), Windows (Mushaf-Setup.exe), Mac (Mushaf.dmg), Google Play upload (Mushaf.aab). Web: https://mishafapp32.vercel.app"; then
     if [ -n "$PREV" ] && [ "$PREV" != "$TAG" ]; then
       SEED="$(mktemp -d)"
       for a in $ALL_ASSETS; do
