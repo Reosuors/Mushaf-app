@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSLATIONS } from '../data/translations';
 import { Heart, Coffee, ShieldCheck, Sparkles, Star, CheckCircle2 } from 'lucide-react';
+import {
+  getDonationMode,
+  loadSupportProducts,
+  donate,
+  finishPendingDonations,
+  type DonationMode,
+  type SupportProduct,
+} from '../utils/donations';
 
 interface SupportSectionProps {
   lang: string;
@@ -14,6 +22,15 @@ export const SupportSection: React.FC<SupportSectionProps> = ({ lang }) => {
     azkar: 0,
     tasbih: 0,
   });
+
+  const [mode, setMode] = useState<DonationMode | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getDonationMode().then((m) => alive && setMode(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     setStats({
@@ -40,18 +57,21 @@ export const SupportSection: React.FC<SupportSectionProps> = ({ lang }) => {
             'مصحف هو تطبيق وقفي مجاني بالكامل وخالٍ من الإعلانات. دعمك يساهم في تغطية تكاليف الخوادم وتطوير مزايا إسلامية جديدة للجميع.'}
         </p>
 
-        {/* Donation External Action */}
+        {/* Donation: Google Play Billing in the Play install, Ko-fi everywhere else */}
         <div className="mt-6">
-          <a
-            id="kofi-donation-btn"
-            href="https://ko-fi.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[var(--gold)] text-black font-extrabold px-8 py-3.5 rounded-2xl text-sm shadow-xl hover:bg-[var(--gold2)] active:scale-95 transition-all cursor-pointer"
-          >
-            <Coffee className="w-5 h-5" />
-            <span>{t.supportDonateBtn || 'تبرع عبر Ko-fi / Buy Me a Coffee'}</span>
-          </a>
+          {mode === 'external' && (
+            <a
+              id="kofi-donation-btn"
+              href="https://ko-fi.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[var(--gold)] text-black font-extrabold px-8 py-3.5 rounded-2xl text-sm shadow-xl hover:bg-[var(--gold2)] active:scale-95 transition-all cursor-pointer"
+            >
+              <Coffee className="w-5 h-5" />
+              <span>{t.supportDonateBtn || 'تبرع عبر Ko-fi / Buy Me a Coffee'}</span>
+            </a>
+          )}
+          {mode === 'play' && <PlayDonation lang={lang} />}
         </div>
       </div>
 
@@ -123,6 +143,92 @@ export const SupportSection: React.FC<SupportSectionProps> = ({ lang }) => {
           «اللَّهُمَّ اجْعَلِ القُرْآنَ العَظِيمَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا، وَجَلَاءَ أَحْزَانِنَا، وَذَهَابَ هُمُومِنَا»
         </p>
       </div>
+    </div>
+  );
+};
+
+/** Google Play install only: one-time "support" products sold through Google Play Billing. */
+const PlayDonation: React.FC<{ lang: string }> = ({ lang }) => {
+  const ar = lang === 'ar';
+  const [products, setProducts] = useState<SupportProduct[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<null | 'success' | 'pending' | 'error'>(null);
+
+  useEffect(() => {
+    let alive = true;
+    let stop = () => {};
+    loadSupportProducts().then((list) => alive && setProducts(list));
+    finishPendingDonations(() => alive && setNote('success')).then((r) => (stop = r));
+    return () => {
+      alive = false;
+      stop();
+    };
+  }, []);
+
+  const give = async (id: string) => {
+    if (busy) return;
+    setBusy(id);
+    setNote(null);
+    const status = await donate(id);
+    setBusy(null);
+    if (status !== 'cancelled') setNote(status);
+  };
+
+  if (products === null) {
+    return (
+      <p id="play-donation-loading" className="text-xs text-[var(--text3)] animate-pulse">
+        {ar ? 'جارِ تحميل خيارات الدعم…' : 'Loading support options…'}
+      </p>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div id="play-donation-unavailable" className="bg-[var(--bg3)] border border-[var(--border2)] rounded-2xl px-4 py-3 text-xs text-[var(--text2)]">
+        {ar ? 'التبرع عبر جوجل بلاي غير متاح حالياً' : 'Donating through Google Play is not available right now'}
+        <span className="block text-[0.65rem] text-[var(--text3)] mt-1">
+          {ar ? 'جزاك الله خيراً على نيّتك، حاول لاحقاً إن شاء الله' : 'Thank you for the thought, please try again later'}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div id="play-donation" className="space-y-3">
+      <div className="grid grid-cols-2 gap-2.5 max-w-xs mx-auto">
+        {products.map((p) => (
+          <button
+            key={p.productId}
+            data-product={p.productId}
+            onClick={() => give(p.productId)}
+            disabled={!!busy}
+            className="flex flex-col items-center justify-center gap-0.5 bg-[var(--gold)] text-black font-extrabold px-3 py-3 rounded-2xl text-sm shadow-xl hover:bg-[var(--gold2)] active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
+          >
+            <span className="text-base" dir="ltr">{busy === p.productId ? '…' : p.price}</span>
+            <span className="text-[0.65rem] font-bold opacity-80">{ar ? 'ادعم التطبيق' : 'Support'}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-[0.65rem] text-[var(--text3)] flex items-center justify-center gap-1">
+        <ShieldCheck className="w-3.5 h-3.5" />
+        {ar ? 'دفع آمن عبر Google Play' : 'Secure payment through Google Play'}
+      </p>
+      {note === 'success' && (
+        <div id="play-donation-thanks" className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-4 py-3 text-xs text-[var(--text)] flex items-center justify-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{ar ? 'جزاك الله خيراً! وصل دعمك، شكراً لأنك ساهمت في استمرار التطبيق 💛' : 'Thank you! Your support arrived and helps keep the app going 💛'}</span>
+        </div>
+      )}
+      {note === 'pending' && (
+        <p className="text-xs text-[var(--text2)]">
+          {ar ? 'الدفع قيد المعالجة، وسيُحتسب دعمك فور اكتماله' : 'Your payment is processing; it will count as soon as it completes'}
+        </p>
+      )}
+      {note === 'error' && (
+        <p className="text-xs text-[var(--text2)]">
+          {ar ? 'لم تكتمل العملية، حاول مرة أخرى' : 'The payment did not go through, please try again'}
+        </p>
+      )}
     </div>
   );
 };
