@@ -35,6 +35,9 @@ self.addEventListener('fetch', (event) => {
   // The server API (اسأل chat) is never cached: always the live answer
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return;
 
+  // The download page (/download) is its own page, not the app: never cached, never answered with the app shell
+  if (url.origin === self.location.origin && (url.pathname === '/download' || url.pathname.startsWith('/download/'))) return;
+
   // Audio streams (range requests) go straight to the network
   if (isAudio(url, request)) return;
 
