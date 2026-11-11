@@ -72,6 +72,7 @@ h2{font-size:clamp(22px,5vw,28px);margin:0 0 6px;color:var(--gold2);text-align:c
 .f .em{font-size:24px;line-height:1.2}
 .f b{display:block;font-size:15px}
 .f span{color:var(--text2);font-size:13px}
+@media (max-width:600px){.feat{grid-template-columns:1fr 1fr;gap:8px}.f{flex-direction:column;gap:4px;padding:12px}.f b{font-size:14px}.f span{font-size:12.5px;line-height:1.6}}
 .shots{display:flex;gap:18px;justify-content:center;overflow-x:auto;padding:6px 4px 14px;scroll-snap-type:x mandatory}
 .phone{flex:0 0 auto;width:min(62vw,230px);border-radius:30px;padding:7px;background:#000;border:1px solid #3a372f;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 0 1px rgba(201,168,76,.15);scroll-snap-align:center}
 .phone img{display:block;width:100%;height:auto;border-radius:24px}
@@ -140,11 +141,11 @@ footer a{color:var(--text2)}
       <article class="card" id="c-win">
         <span class="mine-tag" data-en="Your device">جهازك</span>
         <h3><span class="em">🪟</span><span data-en="Windows">ويندوز</span></h3>
-        <div class="meta"><span data-en="Installer (.exe)">ملف تثبيت (.exe)</span> <span data-size-wrap="Mushaf-Setup.exe" hidden>· <span class="ltr" data-size="Mushaf-Setup.exe"></span></span></div>
+        <div class="meta"><span data-en="Installer &lt;span class=&quot;ltr&quot;&gt;(.exe)&lt;/span&gt;">ملف تثبيت <span class="ltr">(.exe)</span></span> <span data-size-wrap="Mushaf-Setup.exe" hidden>· <span class="ltr" data-size="Mushaf-Setup.exe"></span></span></div>
         <a class="btn btn-gold" href="https://github.com/Reosuors/Mushaf-app/releases/latest/download/Mushaf-Setup.exe" data-en="Download for Windows">تحميل للويندوز</a>
         <ol class="steps">
           <li data-en="Open &lt;b&gt;Mushaf-Setup.exe&lt;/b&gt;.">افتح ملف <b>Mushaf-Setup.exe</b>.</li>
-          <li data-en="If you see &lt;b&gt;Windows protected your PC&lt;/b&gt;, click &lt;b&gt;More info&lt;/b&gt;.">إذا ظهرت رسالة <b class="ltr">Windows protected your PC</b> اضغط <b class="ltr">More info</b>.</li>
+          <li data-en="If you see &lt;b&gt;Windows protected your PC&lt;/b&gt;, click &lt;b&gt;More info&lt;/b&gt;.">إذا ظهرت رسالة <b class="ltr" style="white-space:nowrap">Windows protected your PC</b> اضغط <b class="ltr">More info</b>.</li>
           <li data-en="Then click &lt;b&gt;Run anyway&lt;/b&gt;.">بعدين اضغط <b class="ltr">Run anyway</b>.</li>
         </ol>
       </article>
@@ -152,7 +153,7 @@ footer a{color:var(--text2)}
       <article class="card" id="c-mac">
         <span class="mine-tag" data-en="Your device">جهازك</span>
         <h3><span class="em">💻</span><span data-en="Mac">ماك</span></h3>
-        <div class="meta"><span data-en="Disk image (.dmg) — Intel &amp; Apple Silicon">ملف (.dmg) — Intel و Apple Silicon</span> <span data-size-wrap="Mushaf.dmg" hidden>· <span class="ltr" data-size="Mushaf.dmg"></span></span></div>
+        <div class="meta"><span data-en="Disk image &lt;span class=&quot;ltr&quot;&gt;(.dmg)&lt;/span&gt; — Intel &amp;amp; Apple Silicon">ملف <span class="ltr">(.dmg)</span> — لأجهزة <span class="ltr">Intel</span> و<span class="ltr">Apple Silicon</span></span> <span data-size-wrap="Mushaf.dmg" hidden>· <span class="ltr" data-size="Mushaf.dmg"></span></span></div>
         <a class="btn btn-gold" href="https://github.com/Reosuors/Mushaf-app/releases/latest/download/Mushaf.dmg" data-en="Download for Mac">تحميل للماك</a>
         <ol class="steps">
           <li data-en="Open the file and drag &lt;b&gt;Mushaf&lt;/b&gt; into &lt;b&gt;Applications&lt;/b&gt;.">افتح الملف واسحب <b>مصحف</b> إلى <b class="ltr">Applications</b>.</li>
