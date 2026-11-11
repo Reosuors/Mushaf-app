@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مصحف — حمّل التطبيق لجميع الأجهزة | Mushaf</title>
+<meta name="description" content="مصحف: القرآن الكريم بالرسم العثماني مع التلاوة ومواقيت الصلاة والأذكار والرقية. مجاني وبدون إعلانات — أندرويد، آيفون، ويندوز، ماك، والويب.">
+<meta name="theme-color" content="#0b0b0c">
+<meta property="og:type" content="website">
+<meta property="og:title" content="مصحف — حمّل التطبيق مجاناً لجميع الأجهزة">
+<meta property="og:description" content="أندرويد • آيفون • ويندوز • ماك • الويب — القرآن الكريم بالرسم العثماني مع التلاوة ومواقيت الصلاة والأذكار. مجاني وبدون إعلانات.">
+<meta property="og:image" content="https://mishafapp32.vercel.app/download/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://mishafapp32.vercel.app/download">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/download/favicon.png">
+<link rel="apple-touch-icon" href="/download/icon.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Kufi+Arabic:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0c;--bg2:#141416;--bg3:#1b1b1e;--border:#2b2a26;--gold:#c9a84c;--gold2:#e8cf86;--text:#f2efe6;--text2:#b9b3a3;--r:20px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Kufi Arabic","Inter",system-ui,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html[lang=en] body{font-family:"Inter","Noto Kufi Arabic",system-ui,sans-serif;line-height:1.6}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 40% at 50% 0%,rgba(201,168,76,.18),transparent 70%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23c9a84c' stroke-opacity='.06'%3E%3Cpath d='M40 4l10 26 26 10-26 10-10 26-10-26L4 40l26-10z'/%3E%3Ccircle cx='40' cy='40' r='12'/%3E%3C/g%3E%3C/svg%3E")}
+a{color:var(--gold2)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--gold2);outline-offset:3px;border-radius:12px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+header.top{position:sticky;top:0;z-index:5;background:rgba(11,11,12,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:800}
+.brand img{width:36px;height:36px;border-radius:10px;border:1px solid var(--border)}
+.lang{background:transparent;color:var(--gold2);border:1px solid var(--gold);border-radius:999px;padding:6px 16px;font:inherit;font-weight:600;cursor:pointer}
+.lang:hover{background:rgba(201,168,76,.12)}
+.hero{text-align:center;padding:44px 0 28px}
+.hero .icon{width:132px;height:132px;border-radius:30px;border:1px solid rgba(201,168,76,.45);box-shadow:0 0 50px rgba(201,168,76,.28)}
+.hero h1{font-family:"Amiri",serif;font-size:clamp(44px,9vw,68px);margin:14px 0 0;line-height:1.2;background:linear-gradient(180deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+html[lang=en] .hero h1{font-family:"Inter",sans-serif;font-weight:800;letter-spacing:-.02em}
+.hero p.lead{color:var(--text2);font-size:clamp(15px,3.6vw,18px);max-width:640px;margin:8px auto 22px}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.badge{font-size:13px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);padding:4px 12px;border-radius:999px}
+.badge b{color:var(--gold2);font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:800;border-radius:16px;padding:14px 26px;font-size:16px;transition:transform .15s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn-gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#141006;box-shadow:0 10px 30px rgba(201,168,76,.25)}
+.btn-gold:hover{filter:brightness(1.06)}
+.btn-ghost{border:1px solid var(--gold);color:var(--gold2);background:transparent}
+.btn-ghost:hover{background:rgba(201,168,76,.1)}
+.btn-big{font-size:19px;padding:17px 38px;border-radius:18px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+section{padding:34px 0}
+h2{font-size:clamp(22px,5vw,28px);margin:0 0 6px;color:var(--gold2);text-align:center}
+.sub{color:var(--text2);text-align:center;margin:0 0 22px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.card{background:linear-gradient(180deg,var(--bg2),var(--bg));border:1px solid var(--border);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:10px;position:relative}
+.card.mine{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.35),0 12px 40px rgba(201,168,76,.12)}
+.card .mine-tag{display:none;position:absolute;top:14px;inset-inline-end:14px;font-size:12px;background:var(--gold);color:#141006;font-weight:800;padding:2px 10px;border-radius:999px}
+.card.mine .mine-tag{display:block}
+.card h3{margin:0;font-size:20px;display:flex;align-items:center;gap:10px}
+.card h3 .em{font-size:26px}
+.card .meta{color:var(--text2);font-size:13px;margin-top:-6px}
+.card .btn{width:100%}
+.steps{margin:2px 0 0;padding-inline-start:22px;color:var(--text2);font-size:14px}
+.steps li{margin:3px 0}
+.steps b{color:var(--text)}
+.note{font-size:13px;color:var(--text2);background:var(--bg3);border:1px dashed var(--border);border-radius:12px;padding:8px 12px}
+.feat{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.f{display:flex;gap:12px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px}
+.f .em{font-size:24px;line-height:1.2}
+.f b{display:block;font-size:15px}
+.f span{color:var(--text2);font-size:13px}
+.shots{display:flex;gap:18px;justify-content:center;overflow-x:auto;padding:6px 4px 14px;scroll-snap-type:x mandatory}
+.phone{flex:0 0 auto;width:min(62vw,230px);border-radius:30px;padding:7px;background:#000;border:1px solid #3a372f;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 0 1px rgba(201,168,76,.15);scroll-snap-align:center}
+.phone img{display:block;width:100%;height:auto;border-radius:24px}
+.qr{display:flex;gap:24px;align-items:center;justify-content:center;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+.qr .code{width:180px;height:180px;background:#fff;border-radius:16px;padding:10px}
+.qr .code svg{width:100%;height:100%;display:block}
+.qr .txt{max-width:360px;text-align:center}
+.qr .url{font-family:"Inter",monospace;direction:ltr;unicode-bidi:isolate;color:var(--gold2);font-weight:600;word-break:break-all}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+footer{border-top:1px solid var(--border);padding:24px 0 40px;text-align:center;color:var(--text2);font-size:13px}
+footer a{color:var(--text2)}
+.ltr{direction:ltr;unicode-bidi:isolate}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#top"><img src="/download/icon.webp" alt="" width="36" height="36"><span data-en="Mushaf">مصحف</span></a>
+  <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+</div></header>
+
+<main id="top" class="wrap">
+  <section class="hero">
+    <img class="icon" src="/download/icon.webp" alt="أيقونة تطبيق مصحف" data-en-alt="Mushaf app icon" width="132" height="132">
+    <h1 data-en="Mushaf">مصحف</h1>
+    <p class="lead" data-en="The Holy Quran in Uthmani script, with recitation, prayer times, adhkar and ruqyah — completely free and ad-free.">القرآن الكريم بالرسم العثماني، مع التلاوة ومواقيت الصلاة والأذكار والرقية — مجاني بالكامل وبدون إعلانات.</p>
+    <div class="badges">
+      <span class="badge"><span data-en="Version">الإصدار</span> <b class="ltr" id="ver">1.0.31</b></span>
+      <span class="badge" data-en="Android • iPhone • Windows • Mac • Web">أندرويد • آيفون • ويندوز • ماك • ويب</span>
+    </div>
+    <div class="cta">
+      <a class="btn btn-gold btn-big" href="https://mishafapp32.vercel.app" data-en="Open the web app">افتح الموقع</a>
+      <a class="btn btn-ghost btn-big" href="#download" data-en="Download the app ↓">حمّل التطبيق ↓</a>
+    </div>
+  </section>
+
+  <section id="download">
+    <h2 data-en="Download for your device">حمّل التطبيق لجهازك</h2>
+    <p class="sub" data-en="Links always point to the newest version.">الروابط دائماً على آخر نسخة.</p>
+    <div class="grid">
+      <article class="card" id="c-android">
+        <span class="mine-tag" data-en="Your device">جهازك</span>
+        <h3><span class="em">🤖</span><span data-en="Android">أندرويد</span></h3>
+        <div class="meta"><span data-en="APK file">ملف APK</span> <span data-size-wrap="Mushaf.apk" hidden>· <span class="ltr" data-size="Mushaf.apk"></span></span></div>
+        <a class="btn btn-gold" href="https://github.com/Reosuors/Mushaf-app/releases/latest/download/Mushaf.apk" data-en="Download APK">تحميل APK</a>
+        <ol class="steps">
+          <li data-en="Open the downloaded file from the notification or the &lt;b&gt;Downloads&lt;/b&gt; folder.">افتح الملف من الإشعار أو من مجلد <b>التنزيلات</b>.</li>
+          <li data-en="If Android blocks it, tap &lt;b&gt;Settings&lt;/b&gt; and turn on &lt;b&gt;Allow from this source&lt;/b&gt;.">إذا ظهر تنبيه الحظر، اضغط <b>الإعدادات</b> وفعّل <b>السماح من هذا المصدر</b>.</li>
+          <li data-en="Go back and tap &lt;b&gt;Install&lt;/b&gt;.">ارجع واضغط <b>تثبيت</b>.</li>
+        </ol>
+        <div class="note" data-en="Already have an older version? It installs on top and keeps your data.">عندك نسخة قديمة؟ بتنثبت فوقها وبيضل كل شي محفوظ.</div>
+      </article>
+
+      <article class="card" id="c-ios">
+        <span class="mine-tag" data-en="Your device">جهازك</span>
+        <h3><span class="em">🍎</span><span data-en="iPhone &amp; iPad">آيفون وآيباد</span></h3>
+        <div class="meta" data-en="Not on the App Store yet — add it to your home screen">غير متوفر على App Store حالياً — أضفه للشاشة الرئيسية</div>
+        <a class="btn btn-gold" href="https://mishafapp32.vercel.app" data-en="Open in Safari">افتح في Safari</a>
+        <ol class="steps">
+          <li data-en="Open the site in &lt;b&gt;Safari&lt;/b&gt; (tap the button above).">افتح الموقع من <b>Safari</b> (الزر فوق).</li>
+          <li data-en="Tap &lt;b&gt;Share&lt;/b&gt; (the square with an arrow).">اضغط <b>مشاركة</b> (المربع مع السهم).</li>
+          <li data-en="Choose &lt;b&gt;Add to Home Screen&lt;/b&gt;, then &lt;b&gt;Add&lt;/b&gt;.">اختر <b>إضافة إلى الشاشة الرئيسية</b> ثم <b>إضافة</b>.</li>
+        </ol>
+        <div class="note" data-en="Safari → Share → Add to Home Screen — then it opens like an app, full screen.">افتح الموقع من Safari ← مشاركة ← إضافة إلى الشاشة الرئيسية — وبيفتح متل التطبيق بشاشة كاملة.</div>
+      </article>
+
+      <article class="card" id="c-win">
+        <span class="mine-tag" data-en="Your device">جهازك</span>
+        <h3><span class="em">🪟</span><span data-en="Windows">ويندوز</span></h3>
+        <div class="meta"><span data-en="Installer (.exe)">ملف تثبيت (.exe)</span> <span data-size-wrap="Mushaf-Setup.exe" hidden>· <span class="ltr" data-size="Mushaf-Setup.exe"></span></span></div>
+        <a class="btn btn-gold" href="https://github.com/Reosuors/Mushaf-app/releases/latest/download/Mushaf-Setup.exe" data-en="Download for Windows">تحميل للويندوز</a>
+        <ol class="steps">
+          <li data-en="Open &lt;b&gt;Mushaf-Setup.exe&lt;/b&gt;.">افتح ملف <b>Mushaf-Setup.exe</b>.</li>
+          <li data-en="If you see &lt;b&gt;Windows protected your PC&lt;/b&gt;, click &lt;b&gt;More info&lt;/b&gt;.">إذا ظهرت رسالة <b class="ltr">Windows protected your PC</b> اضغط <b class="ltr">More info</b>.</li>
+          <li data-en="Then click &lt;b&gt;Run anyway&lt;/b&gt;.">بعدين اضغط <b class="ltr">Run anyway</b>.</li>
+        </ol>
+      </article>
+
+      <article class="card" id="c-mac">
+        <span class="mine-tag" data-en="Your device">جهازك</span>
+        <h3><span class="em">💻</span><span data-en="Mac">ماك</span></h3>
+        <div class="meta"><span data-en="Disk image (.dmg) — Intel &amp; Apple Silicon">ملف (.dmg) — Intel و Apple Silicon</span> <span data-size-wrap="Mushaf.dmg" hidden>· <span class="ltr" data-size="Mushaf.dmg"></span></span></div>
+        <a class="btn btn-gold" href="https://github.com/Reosuors/Mushaf-app/releases/latest/download/Mushaf.dmg" data-en="Download for Mac">تحميل للماك</a>
+        <ol class="steps">
+          <li data-en="Open the file and drag &lt;b&gt;Mushaf&lt;/b&gt; into &lt;b&gt;Applications&lt;/b&gt;.">افتح الملف واسحب <b>مصحف</b> إلى <b class="ltr">Applications</b>.</li>
+          <li data-en="The first time: &lt;b&gt;right-click&lt;/b&gt; the app → &lt;b&gt;Open&lt;/b&gt;.">أول مرة: <b>كليك يمين</b> على التطبيق ← <b class="ltr">Open</b>.</li>
+          <li data-en="Click &lt;b&gt;Open&lt;/b&gt; again in the message. After that it opens normally.">اضغط <b class="ltr">Open</b> مرة تانية بالرسالة، وبعدها بيفتح عادي.</li>
+        </ol>
+      </article>
+
+      <article class="card" id="c-web">
+        <span class="mine-tag" data-en="Your device">جهازك</span>
+        <h3><span class="em">🌐</span><span data-en="Web — any device">الويب — أي جهاز</span></h3>
+        <div class="meta ltr">mishafapp32.vercel.app</div>
+        <a class="btn btn-gold" href="https://mishafapp32.vercel.app" data-en="Open the web app">افتح الموقع</a>
+        <p class="steps" style="padding:0" data-en="Works in any browser with nothing to install, and keeps working offline after your first visit.">بيشتغل من أي متصفح بدون تثبيت، وبيضل يشتغل بدون إنترنت بعد أول زيارة.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2 data-en="What's inside">مميزات التطبيق</h2>
+    <p class="sub" data-en="Everything in one app, free and without ads.">كل شي بتطبيق واحد، مجاناً وبدون إعلانات.</p>
+    <div class="feat">
+      <div class="f"><span class="em">📖</span><div><b data-en="The full Mushaf">المصحف كاملاً</b><span data-en="In Uthmani script, with a page view and search">بالرسم العثماني، مع عرض الصفحات والبحث</span></div></div>
+      <div class="f"><span class="em">🎧</span><div><b data-en="Listen to recitations">الاستماع للتلاوة</b><span data-en="Choose your reciter; each ayah is highlighted as it's recited">اختر القارئ، والآية بتتظلّل وقت تلاوتها</span></div></div>
+      <div class="f"><span class="em">📚</span><div><b data-en="Tafsir">التفسير</b><span data-en="Tafsir and translations for every ayah">تفسير وترجمات لكل آية</span></div></div>
+      <div class="f"><span class="em">🔁</span><div><b data-en="Memorise">الحفظ</b><span data-en="Ayah repeat and a memorisation test, plus a khatmah plan">تكرار الآيات واختبار الحفظ، وخطة للختمة</span></div></div>
+      <div class="f"><span class="em">🕌</span><div><b data-en="Prayer times">مواقيت الصلاة</b><span data-en="Adhan, countdown and Qibla compass">الأذان والعد التنازلي واتجاه القبلة</span></div></div>
+      <div class="f"><span class="em">🤲</span><div><b data-en="Adhkar">الأذكار</b><span data-en="Hisn al-Muslim: morning, evening and sleep adhkar">حصن المسلم: أذكار الصباح والمساء والنوم</span></div></div>
+      <div class="f"><span class="em">🛡️</span><div><b data-en="Ruqyah">الرقية الشرعية</b><span data-en="Read it or listen with headphones">قراءة أو استماع بالسماعات</span></div></div>
+      <div class="f"><span class="em">📿</span><div><b data-en="Tasbih &amp; the 99 Names">المسبحة وأسماء الله الحسنى</b><span data-en="Digital tasbih counter and the Names with explanations">عداد تسبيح إلكتروني، والأسماء مع شرحها</span></div></div>
+      <div class="f"><span class="em">🎨</span><div><b data-en="Themes &amp; designs">ثيمات وتصاميم</b><span data-en="Several colour themes and page designs">عدة ثيمات ألوان وتصاميم للصفحة</span></div></div>
+      <div class="f"><span class="em">📲</span><div><b data-en="Home-screen widgets">ويدجت للشاشة الرئيسية</b><span data-en="On Android: Ayah of the Day and prayer times">على أندرويد: آية اليوم ومواقيت الصلاة</span></div></div>
+      <div class="f"><span class="em">📶</span><div><b data-en="Works offline">بدون إنترنت</b><span data-en="Download what you need and use it anywhere">حمّل اللي بتحتاجه واستعمله بأي مكان</span></div></div>
+      <div class="f"><span class="em">🌍</span><div><b data-en="Several languages">عدة لغات</b><span data-en="Arabic, English, Urdu, Persian and Bengali">العربية والإنجليزية والأردية والفارسية والبنغالية</span></div></div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <h2 data-en="Screenshots">صور من التطبيق</h2>
+    <p class="sub" data-en="Real screens from the app.">لقطات حقيقية من التطبيق.</p>
+    <div class="shots">
+      <div class="phone"><img src="/download/shot1.webp" alt="الصفحة الرئيسية لتطبيق مصحف" data-en-alt="Mushaf home screen" width="540" height="1169" loading="lazy"></div>
+      <div class="phone"><img src="/download/shot2.webp" alt="صفحة من المصحف" data-en-alt="A Mushaf page" width="540" height="1169" loading="lazy"></div>
+      <div class="phone"><img src="/download/shot3.webp" alt="مواقيت الصلاة" data-en-alt="Prayer times" width="540" height="1169" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section id="qr">
+    <div class="qr">
+      <div class="code" role="img" aria-label="QR code: mishafapp32.vercel.app"><svg viewBox="0 0 33 33" class="segno"><path fill="#fff" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#0d0d0d" d="M2 2.5h7m1 0h1m1 0h1m2 0h2m1 0h1m1 0h2m2 0h7m-29 1h1m5 0h1m1 0h1m1 0h2m3 0h2m2 0h1m2 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m3 0h4m3 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h5m3 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h1m3 0h2m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m2 0h2m1 0h1m4 0h1m1 0h2m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h1m1 0h2m1 0h7m-19 1h2m1 0h1m1 0h2m3 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h5m-29 1h1m1 0h4m2 0h3m1 0h1m5 0h1m3 0h1m2 0h1m2 0h1m-29 1h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h1m1 0h1m3 0h1m1 0h1m2 0h3m1 0h2m-29 1h2m1 0h1m5 0h1m1 0h1m1 0h1m3 0h1m1 0h4m2 0h1m1 0h1m-27 1h3m2 0h1m1 0h2m3 0h3m1 0h1m1 0h2m1 0h2m1 0h1m-25 1h1m2 0h1m3 0h1m1 0h4m1 0h1m1 0h1m2 0h4m4 0h1m-29 1h1m1 0h2m2 0h1m1 0h3m1 0h3m1 0h1m1 0h1m3 0h2m2 0h1m1 0h1m-29 1h2m1 0h3m1 0h2m4 0h1m3 0h1m1 0h5m3 0h1m-27 1h3m2 0h1m3 0h1m2 0h5m1 0h4m2 0h1m2 0h1m-28 1h4m2 0h3m2 0h2m1 0h4m1 0h3m2 0h1m1 0h2m-29 1h1m1 0h1m1 0h8m2 0h3m1 0h1m2 0h1m5 0h2m-28 1h2m1 0h2m2 0h4m1 0h2m1 0h5m1 0h1m2 0h1m1 0h2m-29 1h1m2 0h1m2 0h1m2 0h1m3 0h1m1 0h1m1 0h1m2 0h5m2 0h1m-20 1h1m2 0h4m1 0h2m1 0h2m3 0h1m3 0h1m-29 1h7m1 0h1m4 0h1m4 0h3m1 0h1m1 0h1m1 0h3m-29 1h1m5 0h1m2 0h2m2 0h1m1 0h1m1 0h1m2 0h1m3 0h1m2 0h1m-28 1h1m1 0h3m1 0h1m1 0h1m3 0h1m3 0h1m1 0h1m1 0h6m2 0h1m-29 1h1m1 0h3m1 0h1m4 0h2m2 0h1m1 0h1m2 0h2m2 0h1m1 0h1m-27 1h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h2m1 0h1m3 0h2m3 0h1m-29 1h1m5 0h1m1 0h2m1 0h2m1 0h2m1 0h1m1 0h3m1 0h1m3 0h1m-28 1h7m9 0h2m1 0h3m2 0h2m1 0h2"/></svg></div>
+      <div class="txt">
+        <h2 style="margin-bottom:4px" data-en="Scan to open">امسح وافتح</h2>
+        <p style="color:var(--text2);margin:0 0 6px" data-en="Point your phone camera at the code to open the app.">وجّه كاميرا جوالك على الكود ليفتح التطبيق.</p>
+        <div class="url">mishafapp32.vercel.app</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="support">
+    <div class="two">
+      <article class="card">
+        <h3><span class="em">💛</span><span data-en="Support us">ادعمنا</span></h3>
+        <p class="steps" style="padding:0" data-en="Mushaf is a free, ad-free charity (waqf) app. Your support helps cover the servers and new features — an ongoing reward (sadaqah jariyah).">مصحف تطبيق وقفي مجاني بالكامل وبدون إعلانات. دعمك بيساعد بتغطية تكاليف الخوادم وتطوير مزايا جديدة — صدقة جارية.</p>
+        <a class="btn btn-ghost" href="https://mishafapp32.vercel.app" data-en="Open the app → Support us 💛">افتح التطبيق ← ادعمنا 💛</a>
+      </article>
+      <article class="card">
+        <h3><span class="em">📩</span><span data-en="Report a problem">إبلاغ عن مشكلة</span></h3>
+        <p class="steps" style="padding:0" data-en="Found a problem? Inside the app, tap &lt;b&gt;Report a problem&lt;/b&gt; (the floating button at the bottom, or in the side menu). Choose the section, write a message, attach a photo if you like — no sign-in needed, and the reply reaches you in the app.">لقيت مشكلة؟ من داخل التطبيق اضغط زر <b>«إبلاغ عن مشكلة»</b> (الزر العائم تحت أو من القائمة الجانبية). اختر القسم واكتب رسالتك وأرفق صورة إذا بدك — بدون تسجيل دخول، والرد بيوصلك جوا التطبيق.</p>
+        <a class="btn btn-ghost" href="https://mishafapp32.vercel.app" data-en="Open the app">افتح التطبيق</a>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <p><span data-en="Mushaf — free and ad-free.">مصحف — مجاني وبدون إعلانات.</span> <span data-en="Version">الإصدار</span> <span class="ltr" id="ver2">1.0.31</span></p>
+  <p><a href="https://github.com/Reosuors/Mushaf-app/releases" data-en="All versions">كل الإصدارات</a> · <a href="https://mishafapp32.vercel.app" class="ltr">mishafapp32.vercel.app</a></p>
+</div></footer>
+<script src="/download/app.js" defer></script>
+</body>
+</html>
