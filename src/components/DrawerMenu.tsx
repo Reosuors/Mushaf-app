@@ -1,22 +1,19 @@
 import React from 'react';
-import { Section, DesignStyleId } from '../types';
+import { Section } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import {
   X,
   Search,
-  BookOpen,
-  Clock,
-  HeartHandshake,
-  Sparkles,
   Palette,
   HardDrive,
   Brain,
   MessageSquare,
-  Check,
+  CalendarCheck,
   ChevronLeft,
   ChevronRight,
-  CalendarCheck,
 } from 'lucide-react';
+import { MihrabBackdrop, MushafLogoEmblem, SectionIcon, GoldDivider } from './IslamicOrnaments';
+import { hapticFeedback } from '../utils/haptics';
 
 interface DrawerMenuProps {
   isOpen: boolean;
@@ -49,123 +46,77 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const ArrowIcon = isRtl ? ChevronLeft : ChevronRight;
 
-  const navItems: { id: Section; label: string; icon: string; desc: string }[] = [
-    { id: 'quran', label: t.navQuran || 'القرآن الكريم', icon: '📖', desc: 'تلاوة، تفسير، وترجمات' },
-    { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', icon: '🕌', desc: 'الأذان والقبلة والعد التنازلي' },
-    { id: 'ruqyah', label: 'الرقية الشرعية', icon: '🛡️', desc: 'قراءة أو استماع بالسماعات 🎧' },
-    { id: 'azkar', label: t.navAzkar || 'حصن المسلم والأذكار', icon: '🤲', desc: 'أذكار الصباح والمساء والنوم' },
-    { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', icon: '📿', desc: 'عداد الاستغفار والتسبيح' },
-    { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', icon: '☪️', desc: 'شرح وتدبر الأسماء العظمى' },
-    { id: 'support', label: t.navSupport || 'ادعم التطبيق', icon: '💛', desc: 'شاركنا الأجر والخير' },
-    { id: 'about', label: 'عن التطبيق والمصادر', icon: 'ℹ️', desc: 'مصدر نص القرآن والتلاوات والخطوط' },
+  const navItems: { id: Section; label: string; desc: string }[] = [
+    { id: 'quran', label: t.navQuran || 'القرآن الكريم', desc: isRtl ? 'تلاوة، تفسير، وعلامات' : 'Recitation, tafsir & bookmarks' },
+    { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', desc: isRtl ? 'الأذان والقبلة والعد التنازلي' : 'Prayer times, Adhan & Qibla' },
+    { id: 'ruqyah', label: isRtl ? 'الرقية الشرعية' : 'Ruqyah Shariah', desc: isRtl ? 'آيات وأدعية — قراءة واستماع' : 'Quranic verses & Sunnah duas' },
+    { id: 'azkar', label: t.navAzkar || 'حصن المسلم والأذكار', desc: isRtl ? 'أذكار الصباح والمساء والنوم' : 'Morning, evening & sleep adhkar' },
+    { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', desc: isRtl ? 'عداد التسبيح والاستغفار' : 'Digital tasbih counter' },
+    { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', desc: isRtl ? 'التدبر والمعاني والنطق' : '99 Names & reflections' },
+    { id: 'support', label: t.navSupport || 'ادعم التطبيق', desc: isRtl ? 'صدقة جارية لاستمرار التطبيق' : 'Support ad-free development' },
+    { id: 'about', label: isRtl ? 'عن التطبيق والمصادر' : 'About & Sources', desc: isRtl ? 'مصدر نص القرآن والتلاوات' : 'Tanzil text & audio credits' },
   ];
 
   return (
     <div className="fixed inset-0 z-[300] flex animate-fade-in">
-      {/* Backdrop */}
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
       />
 
-      {/* Drawer Container (Sliding from Start) */}
-      <div
-        className={`relative z-10 w-80 max-w-[85vw] bg-[var(--bg2)] border-e border-[var(--border2)] h-full flex flex-col shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${
-          isRtl ? 'animate-sheet-up' : 'animate-sheet-up'
-        }`}
-      >
-        {/* Drawer Header */}
-        <div className="p-4 border-b border-[var(--border2)] flex items-center justify-between bg-[var(--bg)]/70">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🕌</span>
-            <div>
-              <h3 className="font-amiri text-lg font-bold text-[var(--gold)] leading-none">
-                {t.logo || 'المصحف الشريف'}
-              </h3>
-              <span className="text-[0.62rem] text-[var(--text3)]">
-                {isRtl ? 'القائمة الرئيسية الشاملة' : 'Main Drawer Menu'}
-              </span>
+      <div className="relative z-10 w-[310px] max-w-[86vw] bg-[var(--bg2)] border-e border-[var(--gold)]/25 h-full flex flex-col shadow-2xl overflow-hidden">
+        {/* Illuminated Mihrab Drawer Header */}
+        <div className="relative px-5 pt-5 pb-4 border-b border-[var(--gold)]/20 bg-gradient-to-b from-[var(--bg3)] to-[var(--bg2)] overflow-hidden">
+          <MihrabBackdrop className="opacity-70" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <MushafLogoEmblem className="w-9 h-9" />
+              <div>
+                <h2 className="font-amiri text-2xl font-bold text-[var(--gold2)] leading-none">
+                  {t.logo || 'مصحف'}
+                </h2>
+                <p className="text-[0.66rem] text-[var(--text2)] mt-1">
+                  {isRtl ? 'القرآن الكريم · بالرسم العثماني' : 'Noble Quran · Uthmani Script'}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              aria-label="Close Menu"
+              className="w-8 h-8 rounded-xl bg-[var(--bg)]/70 border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold2)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--text)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-            aria-label="Close menu"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
-        {/* Quick Search Button */}
-        <div className="p-3">
-          <button
-            onClick={() => {
-              onClose();
-              onOpenGlobalSearch();
-            }}
-            className="w-full bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] hover:text-[var(--text)] px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs"
-          >
-            <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-[var(--gold)]" />
-              <span>{isRtl ? 'بحث في القرآن والآيات...' : 'Search Quran & Ayahs...'}</span>
-            </div>
-            <kbd className="text-[0.65rem] bg-[var(--bg)] px-1.5 py-0.5 rounded border border-[var(--border2)] text-[var(--text3)]">
-              Ctrl+K
-            </kbd>
-          </button>
-        </div>
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4">
+          {/* Quick Study Tools Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                onOpenGlobalSearch();
+              }}
+              className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--bg3)]/80 border border-[var(--border2)] hover:border-[var(--gold)]/50 text-[var(--text)] text-xs font-bold transition-all cursor-pointer active:scale-95"
+            >
+              <Search className="w-4 h-4 text-[var(--gold)] shrink-0" />
+              <span className="truncate">{isRtl ? 'بحث في الآيات' : 'Search Quran'}</span>
+            </button>
 
-        {/* Navigation Sections */}
-        <div className="flex-1 overflow-y-auto px-3 space-y-1.5 py-1">
-          <div className="text-[0.65rem] font-bold text-[var(--gold)] uppercase px-2 py-1">
-            {isRtl ? 'أقسام المصحف' : 'Sections'}
-          </div>
-
-          {navItems.map((item) => {
-            const isActive = currentSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onSelectSection(item.id);
-                  onClose();
-                }}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-xs font-bold transition-all cursor-pointer text-start ${
-                  isActive
-                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md font-extrabold scale-[1.01]'
-                    : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
-                }`}
-              >
-                <span className="text-xl leading-none">{item.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <span className="block text-sm truncate">{item.label}</span>
-                  <span
-                    className={`block text-[0.65rem] truncate mt-0.5 ${
-                      isActive ? 'text-black/80 font-medium' : 'text-[var(--text3)]'
-                    }`}
-                  >
-                    {item.desc}
-                  </span>
-                </div>
-                {isActive && <Check className="w-4 h-4 text-black shrink-0" />}
-              </button>
-            );
-          })}
-
-          {/* Khatmah & Memorization Test Shortcuts */}
-          <div className="pt-2 space-y-1.5">
             {onOpenKhatmahModal && (
               <button
                 onClick={() => {
                   onClose();
                   onOpenKhatmahModal();
                 }}
-                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gradient-to-r from-[var(--gold)]/15 to-[var(--gold)]/5 hover:from-[var(--gold)]/25 hover:to-[var(--gold)]/10 border border-[var(--gold)]/30 text-[var(--gold2)] text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--bg3)]/80 border border-[var(--border2)] hover:border-[var(--gold)]/50 text-[var(--text)] text-xs font-bold transition-all cursor-pointer active:scale-95"
               >
-                <CalendarCheck className="w-4 h-4 text-[var(--gold)]" />
-                <span>{isRtl ? 'مخطط ومتابع ختمة القرآن' : 'Khatmah Planner'}</span>
+                <CalendarCheck className="w-4 h-4 text-[var(--gold)] shrink-0" />
+                <span className="truncate">{isRtl ? 'مخطط الختمة' : 'Khatmah'}</span>
               </button>
             )}
 
@@ -174,48 +125,99 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
                 onClose();
                 onOpenMemTest();
               }}
-              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 border border-[var(--gold)]/30 text-[var(--gold)] text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--bg3)]/80 border border-[var(--border2)] hover:border-[var(--gold)]/50 text-[var(--text)] text-xs font-bold transition-all cursor-pointer active:scale-95"
             >
-              <Brain className="w-4 h-4" />
-              <span>{isRtl ? 'اختبار الحفظ والتسميع بالمايك' : 'Memorization Voice Test'}</span>
+              <Brain className="w-4 h-4 text-[var(--gold)] shrink-0" />
+              <span className="truncate">{isRtl ? 'اختبار الحفظ' : 'Memorize'}</span>
             </button>
-          </div>
-        </div>
 
-        {/* Drawer Bottom Tools */}
-        <div className="p-3 border-t border-[var(--border2)] bg-[var(--bg)]/50 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {
                 onClose();
                 onOpenThemeModal();
               }}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] text-xs font-bold cursor-pointer transition-all"
+              className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--gold)]/12 border border-[var(--gold)]/35 hover:bg-[var(--gold)]/20 text-[var(--gold2)] text-xs font-bold transition-all cursor-pointer active:scale-95"
             >
-              <Palette className="w-3.5 h-3.5 text-[var(--gold)]" />
-              <span>{isRtl ? 'المظهر والتصميم' : 'Themes'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                onClose();
-                onOpenOfflineModal();
-              }}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] text-xs font-bold cursor-pointer transition-all"
-            >
-              <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{isRtl ? 'الأوفلاين' : 'Offline'}</span>
+              <Palette className="w-4 h-4 text-[var(--gold)] shrink-0" />
+              <span className="truncate">{isRtl ? 'المظهر والخط' : 'Appearance'}</span>
             </button>
           </div>
 
+          <GoldDivider className="opacity-60" />
+
+          {/* Main Sections List */}
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = currentSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    hapticFeedback.navigation();
+                    onSelectSection(item.id);
+                    onClose();
+                  }}
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl transition-all cursor-pointer text-start ${
+                    isActive
+                      ? 'bg-[var(--gold)]/14 border border-[var(--gold)]/40 text-[var(--gold2)] shadow-sm'
+                      : 'border border-transparent text-[var(--text)] hover:bg-[var(--bg3)]/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                        isActive
+                          ? 'bg-[var(--gold)] text-black border-[var(--gold)]'
+                          : 'bg-[var(--bg3)] border-[var(--border2)] text-[var(--gold)]'
+                      }`}
+                    >
+                      <SectionIcon id={item.id} active={isActive} className="w-[18px] h-[18px]" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className={`text-xs sm:text-sm font-bold truncate ${isActive ? 'text-[var(--gold2)]' : 'text-[var(--text)]'}`}>
+                        {item.label}
+                      </div>
+                      <div className="text-[0.65rem] text-[var(--text3)] truncate mt-0.5">
+                        {item.desc}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowIcon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[var(--gold)]' : 'text-[var(--text3)] opacity-50'}`} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Drawer Footer Utilities */}
+        <div className="p-3 border-t border-[var(--border2)] bg-[var(--bg)]/60 space-y-2">
+          <button
+            onClick={() => {
+              onClose();
+              onOpenOfflineModal();
+            }}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] hover:border-[var(--gold)]/50 text-xs font-bold text-[var(--text2)] hover:text-[var(--gold2)] transition-all cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-[var(--gold)]" />
+              <span>{isRtl ? 'إدارة التحميل بدون إنترنت' : 'Offline Downloads'}</span>
+            </span>
+            <ArrowIcon className="w-3.5 h-3.5 opacity-60" />
+          </button>
+
           {onOpenReport && (
             <button
-              onClick={onOpenReport}
-              data-testid="drawer-report"
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 border border-[var(--gold)]/40 text-[var(--gold2)] text-xs font-bold cursor-pointer transition-all"
+              onClick={() => {
+                onClose();
+                onOpenReport();
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] hover:border-[var(--gold)]/50 text-xs font-bold text-[var(--text2)] hover:text-[var(--gold2)] transition-all cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>{isRtl ? 'إبلاغ عن مشكلة' : 'Report a problem'}</span>
+              <span className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[var(--gold)]" />
+                <span>{isRtl ? 'إبلاغ عن مشكلة / بلاغاتي' : 'Report a Problem'}</span>
+              </span>
+              <ArrowIcon className="w-3.5 h-3.5 opacity-60" />
             </button>
           )}
         </div>

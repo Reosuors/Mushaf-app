@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TASBIH_LIST } from '../data/tasbih';
 import { TRANSLATIONS } from '../data/translations';
-import { RotateCcw, Minus, Plus, Sparkles, Award, Smartphone, Check } from 'lucide-react';
+import { toArabicDigits } from '../utils/quranText';
+import { RotateCcw, Minus, Award, Smartphone } from 'lucide-react';
 import { hapticFeedback } from '../utils/haptics';
+import { MihrabBackdrop } from './IslamicOrnaments';
 
 interface TasbihSectionProps {
   lang: string;
@@ -10,17 +12,18 @@ interface TasbihSectionProps {
 
 export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
 
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
-  const [count, setCount] = useState<number>(() => {
-    return parseInt(localStorage.getItem('current_tasbih_count') || '0', 10);
-  });
+  const [count, setCount] = useState<number>(() =>
+    parseInt(localStorage.getItem('current_tasbih_count') || '0', 10)
+  );
   const [target, setTarget] = useState<number>(33);
-  const [totalLifetime, setTotalLifetime] = useState<number>(() => {
-    return parseInt(localStorage.getItem('tasbih_lifetime') || '0', 10);
-  });
+  const [totalLifetime, setTotalLifetime] = useState<number>(() =>
+    parseInt(localStorage.getItem('tasbih_lifetime') || '0', 10)
+  );
   const [hapticsOn, setHapticsOn] = useState<boolean>(() => hapticFeedback.isEnabled());
+  const [pulseKey, setPulseKey] = useState<number>(0);
 
   const selectedItem = TASBIH_LIST[selectedIdx] || TASBIH_LIST[0];
 
@@ -38,8 +41,8 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
       return next;
     });
 
-    // Provide haptic feedback: standard crisp pulse for each count,
-    // and a celebratory rhythmic pattern when reaching cycle targets (e.g. 33, 100)
+    setPulseKey((k) => k + 1);
+
     if (target > 0 && nextCount > 0 && nextCount % target === 0) {
       hapticFeedback.tasbihCycle();
     } else {
@@ -66,12 +69,9 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
     const nextState = !hapticsOn;
     setHapticsOn(nextState);
     hapticFeedback.setEnabled(nextState);
-    if (nextState) {
-      hapticFeedback.success();
-    }
+    if (nextState) hapticFeedback.success();
   };
 
-  // Keyboard shortcut: Spacebar to tap tasbih
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && e.target === document.body) {
@@ -84,14 +84,15 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
   }, [target]);
 
   const progress = target > 0 ? (count % target) / target : 0;
-  const circ = 2 * Math.PI * 105; // radius = 105
-  const strokeOffset = circ * (1 - progress);
+  const displayProgress = count > 0 && count % target === 0 ? 1 : progress;
+  const circ = 2 * Math.PI * 102;
+  const strokeOffset = circ * (1 - displayProgress);
   const cyclesCompleted = target > 0 ? Math.floor(count / target) : 0;
 
   return (
-    <div className="max-w-xl mx-auto p-3.5 sm:p-6 pb-28 space-y-4 animate-fade-in flex flex-col items-center">
-      {/* Preset Phrase Selector Scroll */}
-      <div className="w-full overflow-x-auto pb-2 flex gap-2 no-scrollbar">
+    <div className="max-w-xl mx-auto p-3.5 sm:p-6 pb-28 space-y-5 animate-fade-in flex flex-col items-center">
+      {/* Preset Dhikr Pills */}
+      <div className="w-full overflow-x-auto pb-1 flex gap-2 no-scrollbar">
         {TASBIH_LIST.map((item, idx) => (
           <button
             key={idx}
@@ -100,10 +101,10 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
               setSelectedIdx(idx);
               setTarget(item.n || 33);
             }}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 border ${
+            className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 border ${
               idx === selectedIdx
-                ? 'bg-[var(--gold)] text-black border-[var(--gold)] shadow-md'
-                : 'bg-[var(--bg2)] text-[var(--text2)] border-[var(--border2)] hover:border-[var(--gold)]/40'
+                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black border-[var(--gold)] shadow-md'
+                : 'bg-[var(--bg2)] text-[var(--text2)] border-[var(--border2)] hover:border-[var(--gold)]/45'
             }`}
           >
             {item.text}
@@ -111,20 +112,19 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
         ))}
       </div>
 
-      {/* Target Goal & Haptics Quick Toggle */}
+      {/* Target & Haptics Controls */}
       <div className="w-full flex items-center justify-between gap-2">
-        {/* Target Goal Selector */}
-        <div className="flex items-center gap-1.5 bg-[var(--bg2)] border border-[var(--border2)] p-1 rounded-2xl shadow-sm">
-          {[33, 100, 1000].map((num) => (
+        <div className="flex items-center gap-1 bg-[var(--bg2)] border border-[var(--border2)] p-1 rounded-xl">
+          {[33, 99, 100, 1000].map((num) => (
             <button
               key={num}
               onClick={() => {
                 hapticFeedback.selection();
                 setTarget(num);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer tabular-nums ${
                 target === num
-                  ? 'bg-[var(--gold)]/20 text-[var(--gold)] border border-[var(--gold)]/30 shadow-xs'
+                  ? 'bg-[var(--gold)]/18 text-[var(--gold2)] border border-[var(--gold)]/35'
                   : 'text-[var(--text3)] hover:text-[var(--text)]'
               }`}
             >
@@ -133,105 +133,116 @@ export const TasbihSection: React.FC<TasbihSectionProps> = ({ lang }) => {
           ))}
         </div>
 
-        {/* Haptic Vibration Feedback Toggle */}
         <button
           onClick={handleToggleHaptics}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
             hapticsOn
-              ? 'bg-[var(--gold)]/15 border-[var(--gold)] text-[var(--gold2)] shadow-xs'
-              : 'bg-[var(--bg2)] border-[var(--border2)] text-[var(--text3)] hover:text-[var(--text)]'
+              ? 'bg-[var(--gold)]/14 border-[var(--gold)]/45 text-[var(--gold2)]'
+              : 'bg-[var(--bg2)] border-[var(--border2)] text-[var(--text3)]'
           }`}
-          title={isRtl ? 'تفعيل / إيقاف الاهتزاز التفاعلي عند الضغط' : 'Toggle Haptic Vibration'}
         >
-          <Smartphone className={`w-3.5 h-3.5 ${hapticsOn ? 'text-[var(--gold)]' : ''}`} />
+          <Smartphone className="w-3.5 h-3.5 text-[var(--gold)]" />
           <span className="text-[0.68rem]">
-            {isRtl ? (hapticsOn ? 'الاهتزاز مفعل' : 'الاهتزاز معطل') : (hapticsOn ? 'Haptics ON' : 'Haptics OFF')}
+            {isRtl ? (hapticsOn ? 'الاهتزاز مفعل' : 'بدون اهتزاز') : hapticsOn ? 'Haptics ON' : 'Haptics OFF'}
           </span>
         </button>
       </div>
 
-      {/* Active Phrase Card */}
-      <div className="w-full bg-[var(--bg2)] border border-[var(--border2)] rounded-3xl p-4 text-center shadow-lg">
-        <p className="font-quran text-2xl sm:text-3xl text-[var(--gold2)] leading-relaxed dir-rtl">
-          {selectedItem.text}
-        </p>
-      </div>
+      {/* Illuminated Sanctuary Counter Card */}
+      <div className="w-full relative rounded-[28px] overflow-hidden border border-[var(--gold)]/30 bg-gradient-to-b from-[var(--bg3)]/90 via-[var(--bg2)] to-[var(--bg2)] p-6 sm:p-8 flex flex-col items-center text-center shadow-[0_20px_50px_-24px_rgba(0,0,0,0.85)]">
+        <MihrabBackdrop className="opacity-75" />
 
-      {/* Interactive Big Circular Counter */}
-      <div className="relative my-4 flex items-center justify-center">
-        {/* Animated Ring */}
-        <div className="w-64 h-64 sm:w-72 sm:h-72">
-          <svg className="-rotate-90 w-full h-full" viewBox="0 0 240 240">
-            <circle
-              fill="none"
-              stroke="var(--border2)"
-              cx="120"
-              cy="120"
-              r="105"
-              strokeWidth="10"
-            />
-            <circle
-              fill="none"
-              stroke="var(--gold)"
-              cx="120"
-              cy="120"
-              r="105"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={strokeOffset}
-              className="transition-[stroke-dashoffset] duration-150 ease-out"
-            />
-          </svg>
+        <div className="relative z-10 w-full flex flex-col items-center">
+          <p className="font-quran text-2xl sm:text-3xl text-[var(--gold2)] leading-relaxed dir-rtl mb-6 text-glow">
+            {selectedItem.text}
+          </p>
+
+          {/* Tactile Illuminated Pearl Ring Button */}
+          <div className="relative w-60 h-60 flex items-center justify-center my-1">
+            {pulseKey > 0 && (
+              <span
+                key={pulseKey}
+                className="pointer-events-none absolute inset-4 rounded-full border-2 border-[var(--gold)]/60 animate-pearl-pulse"
+              />
+            )}
+
+            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 240 240">
+              {/* Outer ornamental dashed ring */}
+              <circle
+                cx="120"
+                cy="120"
+                r="114"
+                fill="none"
+                stroke="color-mix(in srgb, var(--gold) 18%, transparent)"
+                strokeWidth="1"
+                strokeDasharray="3 5"
+              />
+              <circle
+                cx="120"
+                cy="120"
+                r="102"
+                fill="none"
+                stroke="color-mix(in srgb, var(--border2) 85%, transparent)"
+                strokeWidth="7"
+              />
+              <circle
+                cx="120"
+                cy="120"
+                r="102"
+                fill="none"
+                stroke="var(--gold)"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray={circ}
+                strokeDashoffset={strokeOffset}
+                className="transition-all duration-200"
+              />
+            </svg>
+
+            <button
+              type="button"
+              onClick={handleIncrement}
+              aria-label={t.tapToCount || 'اضغط للتسبيح'}
+              className="w-44 h-44 rounded-full bg-gradient-to-b from-[var(--bg3)] to-[var(--bg)] border border-[var(--gold)]/45 shadow-[inset_0_2px_18px_rgba(212,175,55,0.16),0_12px_30px_rgba(0,0,0,0.65)] hover:border-[var(--gold)] active:scale-[0.94] transition-all cursor-pointer flex flex-col items-center justify-center select-none"
+            >
+              <span className="font-sans text-5xl sm:text-6xl font-extrabold text-[var(--gold2)] tabular-nums leading-none tracking-tight" dir="ltr">
+                {count}
+              </span>
+              <span className="text-[0.72rem] text-[var(--text2)] mt-2 font-semibold tabular-nums">
+                {isRtl ? `الهدف ${target}` : `Goal ${target}`}
+              </span>
+            </button>
+          </div>
+
+          {/* Cycles & Controls Row */}
+          <div className="w-full flex items-center justify-between gap-3 mt-6 pt-4 border-t border-[var(--gold)]/15">
+            <button
+              onClick={handleDecrement}
+              className="w-10 h-10 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold2)] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+              title={isRtl ? 'إنقاص ١' : 'Decrement'}
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 text-xs">
+              <span className="px-3 py-1 rounded-full bg-[var(--bg3)] border border-[var(--border2)] text-[var(--gold2)] font-bold">
+                {isRtl ? `الدورات: ${cyclesCompleted}` : `Cycles: ${cyclesCompleted}`}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-[var(--gold)]/10 border border-[var(--gold)]/30 text-[var(--text2)] font-bold inline-flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-[var(--gold)]" />
+                <span>{totalLifetime.toLocaleString()}</span>
+              </span>
+            </div>
+
+            <button
+              onClick={handleReset}
+              className="w-10 h-10 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] hover:text-red-400 flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+              title={isRtl ? 'تصفير العداد' : 'Reset Counter'}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-
-        {/* Central Clickable Trigger */}
-        <button
-          id="tasbih-tap-button"
-          onClick={handleIncrement}
-          className="absolute inset-4 sm:inset-5 rounded-full bg-gradient-to-br from-[var(--bg2)] to-[var(--bg3)] border border-[var(--gold)]/30 shadow-2xl flex flex-col items-center justify-center p-4 active:scale-95 transition-all cursor-pointer group hover:border-[var(--gold)]"
-        >
-          <span className="text-5xl sm:text-6xl font-black text-[var(--gold2)] font-sans tracking-tight select-none">
-            {count}
-          </span>
-          <span className="text-xs text-[var(--text3)] font-semibold mt-1 select-none">
-            {lang === 'ar' ? 'الهدف:' : 'Target:'} {target}
-          </span>
-          {cyclesCompleted > 0 && (
-            <span className="text-[0.65rem] text-[var(--gold)] font-bold mt-1 bg-[var(--gold)]/10 px-2 py-0.5 rounded-full">
-              ✨ {cyclesCompleted} {lang === 'ar' ? 'دورة مكتملة' : 'cycles'}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Auxiliary Controls */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleDecrement}
-          className="w-12 h-12 rounded-2xl bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold)] flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-sm"
-          title="Minus 1"
-        >
-          <Minus className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={handleReset}
-          className="px-5 py-3 rounded-2xl bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text2)] hover:text-red-400 flex items-center gap-2 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm"
-          title="Reset"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span>{lang === 'ar' ? 'تصفير' : 'Reset'}</span>
-        </button>
-      </div>
-
-      {/* Lifetime Stats Footer */}
-      <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text3)] bg-[var(--bg2)] border border-[var(--border2)] px-4 py-2 rounded-xl">
-        <Award className="w-4 h-4 text-[var(--gold)]" />
-        <span>
-          {lang === 'ar' ? 'إجمالي تسبيحاتك المسجلة:' : 'Total Lifetime Dhikr:'}{' '}
-          <strong className="text-[var(--gold2)]">{totalLifetime}</strong>
-        </span>
       </div>
     </div>
   );

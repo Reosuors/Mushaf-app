@@ -749,7 +749,7 @@ export const App: React.FC = () => {
             ? 'md:hidden'
             : currentDesignStyle === 'cards'
             ? 'cards-tabbar'
-            : ''
+            : 'lg:hidden'
         }
       >
         <BottomNav

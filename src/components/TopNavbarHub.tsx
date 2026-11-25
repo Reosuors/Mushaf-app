@@ -1,15 +1,16 @@
 import React from 'react';
 import { Section } from '../types';
 import { TRANSLATIONS } from '../data/translations';
-import { BookOpen, Clock, HeartHandshake, Sparkles, Brain, Award } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { hapticFeedback } from '../utils/haptics';
+import { SectionIcon } from './IslamicOrnaments';
 
 interface TopNavbarHubProps {
   currentSection: Section;
   onSelectSection: (section: Section) => void;
   lang: string;
   onOpenGlobalSearch: () => void;
-  onOpenMemTest: () => void;
+  onOpenMemTest?: () => void;
 }
 
 export const TopNavbarHub: React.FC<TopNavbarHubProps> = ({
@@ -17,26 +18,24 @@ export const TopNavbarHub: React.FC<TopNavbarHubProps> = ({
   onSelectSection,
   lang,
   onOpenGlobalSearch,
-  onOpenMemTest,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
 
-  const navTabs: { id: Section; label: string; icon: string }[] = [
-    { id: 'quran', label: t.navQuran || 'القرآن الكريم', icon: '📖' },
-    { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', icon: '🕌' },
-    { id: 'ruqyah', label: 'الرقية الشرعية', icon: '🛡️' },
-    { id: 'azkar', label: t.navAzkar || 'حصن المسلم', icon: '🤲' },
-    { id: 'tasbih', label: t.navTasbih || 'المسبحة', icon: '📿' },
-    { id: 'asma', label: t.navAsma || 'أسماء الله', icon: '☪️' },
-    { id: 'support', label: t.navSupport || 'ادعمنا', icon: '💛' },
+  const navTabs: { id: Section; label: string }[] = [
+    { id: 'quran', label: t.navQuran || 'القرآن' },
+    { id: 'prayer', label: t.navPrayer || 'الصلاة' },
+    { id: 'ruqyah', label: isRtl ? 'الرقية' : 'Ruqyah' },
+    { id: 'azkar', label: t.navAzkar || 'الأذكار' },
+    { id: 'tasbih', label: t.navTasbih || 'التسبيح' },
+    { id: 'asma', label: t.navAsma || 'الأسماء' },
+    { id: 'support', label: t.navSupport || 'ادعمنا' },
   ];
 
   return (
-    <div className="w-full bg-[var(--bg2)]/95 backdrop-blur-md border-b border-[var(--border2)] px-3 sm:px-6 py-2 sticky top-[54px] z-30 shadow-md">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-        {/* Navigation Tabs in Top Bar */}
-        <div className="flex items-center gap-1.5 shrink-0 py-0.5">
+    <div className="w-full bg-[var(--bg2)]/95 backdrop-blur-xl border-b border-[var(--gold)]/20 px-3 sm:px-6 py-2 sticky top-0 z-30 shadow-sm">
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 shrink-0 py-0.5">
           {navTabs.map((tab) => {
             const isActive = currentSection === tab.id;
             return (
@@ -46,29 +45,26 @@ export const TopNavbarHub: React.FC<TopNavbarHubProps> = ({
                   hapticFeedback.navigation();
                   onSelectSection(tab.id);
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md font-extrabold scale-105'
-                    : 'bg-[var(--bg3)] hover:bg-[var(--bg4)] text-[var(--text2)] hover:text-[var(--text)] border border-[var(--border2)] hover:border-[var(--gold)]/40'
+                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-sm'
+                    : 'text-[var(--text2)] hover:text-[var(--gold2)] hover:bg-[var(--bg3)]'
                 }`}
               >
-                <span className="text-sm">{tab.icon}</span>
+                <SectionIcon id={tab.id} active={isActive} className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Quick Voice Memorization Shortcut */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <button
-            onClick={onOpenMemTest}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 border border-[var(--gold)]/30 text-[var(--gold)] text-xs font-bold transition-all cursor-pointer"
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'تسميع بالصوت' : 'Voice Test'}</span>
-          </button>
-        </div>
+        <button
+          onClick={onOpenGlobalSearch}
+          className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] hover:border-[var(--gold)]/50 text-xs font-bold text-[var(--gold2)] flex items-center gap-1.5 shrink-0 cursor-pointer"
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{isRtl ? 'بحث' : 'Search'}</span>
+        </button>
       </div>
     </div>
   );

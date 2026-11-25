@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AZKAR } from '../data/azkar';
 import { TRANSLATIONS } from '../data/translations';
+import { toArabicDigits } from '../utils/quranText';
 import { Check, RotateCcw, Sparkles, Shield, Sun, Moon, Sunset } from 'lucide-react';
 import { hapticFeedback } from '../utils/haptics';
 
@@ -11,7 +12,7 @@ interface AzkarSectionProps {
 
 export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang, onOpenRuqyah }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
   const [activeTab, setActiveTab] = useState<'sabah' | 'masa' | 'nawm' | 'ruqyah'>('sabah');
   const [userCounters, setUserCounters] = useState<Record<number, number>>({});
 
@@ -22,15 +23,8 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang, onOpenRuqyah }
     if (current < maxCount) {
       const next = current + 1;
       setUserCounters((prev) => ({ ...prev, [idx]: next }));
-
-      // Physical vibration feedback
-      if (next === maxCount) {
-        hapticFeedback.success();
-      } else {
-        hapticFeedback.tap();
-      }
-
-      // Record user activity
+      if (next === maxCount) hapticFeedback.success();
+      else hapticFeedback.tap();
       const prevTotal = parseInt(localStorage.getItem('azkar_read') || '0', 10);
       localStorage.setItem('azkar_read', String(prevTotal + 1));
     }
@@ -41,98 +35,61 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang, onOpenRuqyah }
     setUserCounters({});
   };
 
-  // Calculate completion percentage
   const totalRequired = list.reduce((acc, curr) => acc + curr.r, 0);
   const totalCompleted = list.reduce((acc, curr, idx) => acc + Math.min(curr.r, userCounters[idx] || 0), 0);
   const pct = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
 
   return (
     <div className="max-w-3xl mx-auto p-3.5 sm:p-6 pb-28 space-y-4 animate-fade-in" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Category Tabs */}
+      {/* Category Switcher */}
       <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 shadow-sm">
-        <button
-          onClick={() => {
-            hapticFeedback.selection();
-            setActiveTab('sabah');
-            setUserCounters({});
-          }}
-          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeTab === 'sabah'
-              ? 'bg-[var(--gold)] text-black shadow-md'
-              : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
-          }`}
-        >
-          <Sun className="w-4 h-4" />
-          <span>{t.azkarSabah}</span>
-        </button>
-
-        <button
-          onClick={() => {
-            hapticFeedback.selection();
-            setActiveTab('masa');
-            setUserCounters({});
-          }}
-          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeTab === 'masa'
-              ? 'bg-[var(--gold)] text-black shadow-md'
-              : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
-          }`}
-        >
-          <Sunset className="w-4 h-4" />
-          <span>{t.azkarMasa}</span>
-        </button>
-
-        <button
-          onClick={() => {
-            hapticFeedback.selection();
-            setActiveTab('nawm');
-            setUserCounters({});
-          }}
-          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeTab === 'nawm'
-              ? 'bg-[var(--gold)] text-black shadow-md'
-              : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
-          }`}
-        >
-          <Moon className="w-4 h-4" />
-          <span>{t.azkarNawm}</span>
-        </button>
-
-        <button
-          onClick={() => {
-            hapticFeedback.selection();
-            if (onOpenRuqyah) { onOpenRuqyah(); return; }
-            setActiveTab('ruqyah');
-            setUserCounters({});
-          }}
-          className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeTab === 'ruqyah'
-              ? 'bg-[var(--gold)] text-black shadow-md'
-              : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
-          }`}
-        >
-          <Shield className="w-4 h-4" />
-          <span>{isRtl ? 'الرقية الشرعية' : 'Ruqyah Shariah'}</span>
-        </button>
+        {(
+          [
+            ['sabah', t.azkarSabah, Sun],
+            ['masa', t.azkarMasa, Sunset],
+            ['nawm', t.azkarNawm, Moon],
+            ['ruqyah', isRtl ? 'الرقية الشرعية' : 'Ruqyah', Shield],
+          ] as const
+        ).map(([id, label, Icon]) => {
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => {
+                hapticFeedback.selection();
+                if (id === 'ruqyah' && onOpenRuqyah) {
+                  onOpenRuqyah();
+                  return;
+                }
+                setActiveTab(id);
+                setUserCounters({});
+              }}
+              className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                isActive
+                  ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
+                  : 'text-[var(--text2)] hover:text-[var(--gold2)] hover:bg-[var(--bg3)]'
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Progress & Reset Status Bar */}
-      <div className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-3.5 sm:p-4 flex items-center justify-between shadow-sm">
-        <div className="flex-1 me-4">
-          <div className="flex items-center justify-between text-xs font-bold mb-1">
-            <span className="text-[var(--gold2)] flex items-center gap-1">
+      {/* Session Progress Ribbon */}
+      <div className="bg-[var(--bg2)] border border-[var(--gold)]/22 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between text-xs font-bold mb-2">
+            <span className="text-[var(--gold2)] flex items-center gap-1.5 font-amiri text-sm">
               <Sparkles className="w-3.5 h-3.5 text-[var(--gold)]" />
-              <span>
-                {activeTab === 'ruqyah'
-                  ? (isRtl ? 'إنجاز آيات وأدعية الرقية' : 'Ruqyah Progress')
-                  : (isRtl ? 'إنجاز أذكار هذه الجلسة' : 'Session Progress')}
-              </span>
+              <span>{isRtl ? 'إنجاز أذكار هذه الجلسة' : 'Session Progress'}</span>
             </span>
-            <span className="text-[var(--gold)]">{pct}%</span>
+            <span className="text-[var(--gold2)] tabular-nums">{pct}%</span>
           </div>
-          <div className="w-full h-2 bg-[var(--bg3)] rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-[var(--bg3)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] transition-all duration-300"
+              className="h-full bg-gradient-to-l from-[var(--gold2)] to-[var(--gold)] transition-all duration-300 rounded-full"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -140,71 +97,78 @@ export const AzkarSection: React.FC<AzkarSectionProps> = ({ lang, onOpenRuqyah }
 
         <button
           onClick={handleResetSection}
-          className="p-2 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold)] active:scale-95 transition-all cursor-pointer shrink-0"
-          title="Reset Counters"
+          className="w-9 h-9 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold2)] hover:border-[var(--gold)]/50 flex items-center justify-center active:scale-95 transition-all cursor-pointer shrink-0"
+          title={isRtl ? 'إعادة التصفير' : 'Reset'}
         >
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Zikr Items List */}
+      {/* Tactile Manuscript Dhikr Cards */}
       <div className="space-y-3">
         {list.map((item, idx) => {
           const count = userCounters[idx] || 0;
-          const isDone = count >= item.r;
+          const remaining = Math.max(0, item.r - count);
+          const done = count >= item.r;
+          const ratio = item.r > 0 ? Math.min(100, (count / item.r) * 100) : 100;
 
           return (
             <div
-              key={idx}
+              key={`${activeTab}-${idx}`}
               onClick={() => handleIncrement(idx, item.r)}
-              className={`border rounded-3xl p-4 sm:p-5 transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${
-                isDone
-                  ? 'bg-emerald-500/5 border-emerald-500/30'
-                  : 'bg-[var(--bg2)] border-[var(--border2)] hover:border-[var(--gold)]/40 shadow-sm'
+              className={`relative overflow-hidden rounded-[22px] border p-5 transition-all duration-200 select-none ${
+                done
+                  ? 'bg-[var(--green)]/8 border-[var(--green2)]/40 opacity-80'
+                  : 'bg-[var(--bg2)] border-[var(--border2)] hover:border-[var(--gold)]/45 cursor-pointer active:scale-[0.99]'
               }`}
             >
-              {/* Header Badge & Virtue */}
-              <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border2)]/50 mb-3">
-                <span className="text-[0.65rem] font-bold text-[var(--text3)]">
-                  #{idx + 1}
-                </span>
-                {item.b && (
-                  <span className="text-[0.68rem] text-[var(--gold)] font-medium italic bg-[var(--gold)]/5 px-2 py-0.5 rounded-full border border-[var(--gold)]/15">
-                    {item.b}
-                  </span>
-                )}
-              </div>
-
-              {/* Zikr Arabic Calligraphy Text */}
-              <p className="font-quran text-lg sm:text-xl text-[var(--text)] leading-[2.3] dir-rtl text-justify mb-4 whitespace-pre-line">
+              <p className="font-quran text-xl sm:text-[1.45rem] text-[var(--text)] leading-[2.25] dir-rtl text-right">
                 {item.z}
               </p>
 
-              {/* Bottom Counter Bar */}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border2)]/50">
-                <div className="text-[0.68rem] text-[var(--text3)]">
-                  {lang === 'ar' ? 'المطلوب:' : 'Target:'} {item.r}{' '}
-                  {lang === 'ar' ? 'مرات' : 'times'}
-                </div>
+              {item.b && (
+                <p className="text-xs text-[var(--text2)] mt-3 pt-2.5 border-t border-[var(--gold)]/12 leading-relaxed">
+                  {item.b}
+                </p>
+              )}
+
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <span className="text-[0.7rem] text-[var(--text3)]">
+                  {done
+                    ? isRtl ? 'تم بفضل الله' : 'Completed'
+                    : isRtl ? 'اضغط في أي مكان للعدّ' : 'Tap card to count'}
+                </span>
 
                 <div
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-xs transition-all ${
-                    isDone
-                      ? 'bg-emerald-500 text-black shadow-md'
-                      : 'bg-[var(--gold)]/15 text-[var(--gold)] border border-[var(--gold)]/30'
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold border tabular-nums ${
+                    done
+                      ? 'bg-[var(--green)]/20 border-[var(--green2)]/50 text-[var(--green2)]'
+                      : 'bg-[var(--gold)]/12 border-[var(--gold)]/40 text-[var(--gold2)]'
                   }`}
                 >
-                  {isDone ? (
+                  {done ? (
                     <>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>{lang === 'ar' ? 'تمت القراءة' : 'Completed'}</span>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{isRtl ? 'مكتمل' : 'Done'}</span>
                     </>
                   ) : (
                     <span>
-                      {count} / {item.r}
+                      {isRtl
+                        ? `${toArabicDigits(remaining)} / ${toArabicDigits(item.r)}`
+                        : `${remaining} / ${item.r}`}
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Subtle bottom progress filament */}
+              <div className="absolute bottom-0 inset-x-0 h-[3px] bg-[var(--bg3)]">
+                <div
+                  className={`h-full transition-all duration-200 ${
+                    done ? 'bg-[var(--green2)]' : 'bg-gradient-to-l from-[var(--gold2)] to-[var(--gold)]'
+                  }`}
+                  style={{ width: `${ratio}%` }}
+                />
               </div>
             </div>
           );

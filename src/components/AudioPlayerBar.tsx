@@ -46,7 +46,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progressPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   const speedOptions = [1, 1.25, 1.5];
   const nextSpeed = () => {
@@ -59,143 +59,124 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   return (
     <div
       id="persistent-audio-player"
-      className="fixed bottom-[var(--nav-h)] left-0 right-0 z-50 bg-[var(--bg2)]/95 backdrop-blur-2xl border-t border-[var(--gold)]/30 h-18 sm:h-20 flex flex-col justify-center px-3 sm:px-6 shadow-[0_-8px_30px_rgba(0,0,0,0.45)] transition-all duration-300 animate-slide-up"
+      className="fixed bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom,0px)+8px)] lg:bottom-4 inset-x-2.5 sm:inset-x-6 z-50 max-w-3xl mx-auto rounded-2xl bg-[var(--bg2)]/95 backdrop-blur-2xl border border-[var(--gold)]/35 shadow-[0_14px_40px_rgba(0,0,0,0.65)] overflow-hidden animate-slide-up"
     >
-      {/* Top micro progress line for continuous feedback */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--border2)] cursor-pointer overflow-hidden group"
+      {/* Interactive top golden progress rail */}
+      <div
+        className="w-full h-1 bg-[var(--bg3)] cursor-pointer relative group"
         onClick={(e) => {
           if (!duration) return;
           const rect = e.currentTarget.getBoundingClientRect();
           const clickX = e.clientX - rect.left;
-          const ratio = clickX / rect.width;
+          const ratio = Math.max(0, Math.min(1, clickX / rect.width));
           onSeek(ratio * duration);
         }}
       >
         <div
-          className="h-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] group-hover:h-[4px] transition-all duration-150"
+          className="h-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] shadow-[0_0_8px_var(--gold)] transition-all duration-150"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2 sm:gap-4 w-full max-w-7xl mx-auto">
-        {/* Left/Start: Surah & Reciter Info + Audio Equalizer Animation */}
-        <div className="flex items-center gap-2.5 min-w-0 max-w-[35%] sm:max-w-[30%]">
-          {/* Animated sound wave bars when playing */}
-          <div className="w-8 h-8 rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/20 flex items-center justify-center shrink-0">
+      <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-3">
+        {/* Start: Surah & Reciter */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="w-9 h-9 rounded-xl bg-[var(--gold)]/12 border border-[var(--gold)]/30 flex items-center justify-center shrink-0">
             {isPlaying && !isLoading ? (
-              <div className="flex items-end gap-0.5 h-4">
-                <span className="w-1 bg-[var(--gold)] rounded-full animate-bounce [animation-delay:-0.3s] h-3" />
-                <span className="w-1 bg-[var(--gold2)] rounded-full animate-bounce [animation-delay:-0.15s] h-4" />
-                <span className="w-1 bg-[var(--gold)] rounded-full animate-bounce h-2.5" />
+              <div className="flex items-end gap-0.5 h-3.5">
+                <span className="w-[3px] bg-[var(--gold)] rounded-full animate-bounce [animation-delay:-0.3s] h-2.5" />
+                <span className="w-[3px] bg-[var(--gold2)] rounded-full animate-bounce [animation-delay:-0.15s] h-3.5" />
+                <span className="w-[3px] bg-[var(--gold)] rounded-full animate-bounce h-2" />
               </div>
             ) : isLoading ? (
               <Loader2 className="w-4 h-4 text-[var(--gold)] animate-spin" />
             ) : (
-              <Volume2 className="w-4 h-4 text-[var(--gold)] opacity-70" />
+              <Volume2 className="w-4 h-4 text-[var(--gold)]" />
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="text-xs sm:text-sm font-bold text-[var(--gold2)] truncate tracking-wide font-amiri">
+          <div className="min-w-0">
+            <div className="font-amiri text-sm sm:text-base font-bold text-[var(--gold2)] truncate leading-tight">
               {surahName || 'تلاوة القرآن الكريم'}
             </div>
-            <div className="text-[0.65rem] sm:text-[0.7rem] text-[var(--text3)] truncate flex items-center gap-1">
-              <span>{reciter ? reciter.name.split('(')[0].trim() : 'مشاري العفاسي'}</span>
-              <span className="text-[0.55rem] bg-[var(--bg3)] text-[var(--gold)] px-1 rounded border border-[var(--border2)] hidden xs:inline">
-                HQ
+            <div className="text-[0.66rem] text-[var(--text2)] truncate flex items-center gap-1.5">
+              <span className="truncate">{reciter ? reciter.name.split('(')[0].trim() : 'مشاري العفاسي'}</span>
+              <span className="text-[var(--text3)] tabular-nums shrink-0" dir="ltr">
+                {formatTime(currentTime)} / {formatTime(duration)}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Center: Playback Controls & Skip Buttons */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Previous Ayah */}
+        {/* Center: Playback Controls */}
+        <div className="flex items-center gap-1 shrink-0" dir="ltr">
           <button
             onClick={() => onSkipAyah(-1)}
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold)] hover:bg-[var(--bg3)] active:scale-90 transition-all rounded-full cursor-pointer"
-            title="الآية السابقة / Previous Ayah"
+            className="w-8 h-8 flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold2)] hover:bg-[var(--bg3)] active:scale-90 transition-all rounded-full cursor-pointer"
+            title="الآية السابقة"
           >
             <SkipBack className="w-4 h-4" />
           </button>
 
-          {/* Master Play/Pause with Glowing Ring */}
           <button
             onClick={onTogglePlay}
             disabled={isLoading}
-            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[var(--gold)] to-[var(--gold2)] text-black flex items-center justify-center shadow-[0_0_20px_rgba(201,168,76,0.35)] hover:shadow-[0_0_25px_rgba(201,168,76,0.55)] active:scale-95 transition-all cursor-pointer relative"
-            title={isPlaying ? "إيقاف مؤقت / Pause" : "تشغيل / Play"}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-black flex items-center justify-center shadow-[0_0_18px_rgba(212,175,55,0.4)] hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+            title={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-black" />
+              <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : isPlaying ? (
-              <Pause className="w-5 h-5 fill-black stroke-black" />
+              <Pause className="w-4 h-4 fill-black stroke-black" />
             ) : (
-              <Play className="w-5 h-5 fill-black stroke-black ms-0.5" />
+              <Play className="w-4 h-4 fill-black stroke-black ms-0.5" />
             )}
           </button>
 
-          {/* Next Ayah */}
           <button
             onClick={() => onSkipAyah(1)}
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold)] hover:bg-[var(--bg3)] active:scale-90 transition-all rounded-full cursor-pointer"
-            title="الآية التالية / Next Ayah"
+            className="w-8 h-8 flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold2)] hover:bg-[var(--bg3)] active:scale-90 transition-all rounded-full cursor-pointer"
+            title="الآية التالية"
           >
             <SkipForward className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Center-Right: Progress slider on medium+ screens */}
-        <div className="hidden md:flex flex-col gap-1 w-48 lg:w-72">
-          <div className="flex items-center gap-2">
-            <span className="text-[0.65rem] font-mono text-[var(--text3)] w-8 text-end">
-              {formatTime(currentTime)}
-            </span>
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              step="0.1"
-              value={currentTime}
-              onChange={(e) => onSeek(parseFloat(e.target.value))}
-              className="flex-1 h-1.5 bg-[var(--bg3)] accent-[var(--gold)] rounded-lg outline-none cursor-pointer"
-            />
-            <span className="text-[0.65rem] font-mono text-[var(--text3)] w-8">
-              {formatTime(duration)}
-            </span>
-          </div>
-        </div>
-
-        {/* Right/End Controls: Speed, Tafsir, Close */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Playback speed toggle */}
+        {/* End: Speed, Tafsir, Close */}
+        <div className="flex items-center gap-1 shrink-0">
           {onChangePlaybackRate && (
             <button
               onClick={nextSpeed}
-              className="px-2 py-1 bg-[var(--bg3)] hover:bg-[var(--gold)]/15 border border-[var(--border2)] text-[var(--text2)] hover:text-[var(--gold)] rounded-lg text-[0.68rem] font-mono font-bold transition-all cursor-pointer"
-              title="سرعة التلاوة / Playback Speed"
+              className="hidden sm:inline-flex items-center gap-0.5 px-2 h-8 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] text-[0.68rem] font-bold text-[var(--gold2)] hover:border-[var(--gold)]/50 cursor-pointer"
+              title="سرعة التلاوة"
             >
-              {playbackRate}x
+              <Gauge className="w-3 h-3" />
+              <span>{playbackRate}×</span>
             </button>
           )}
 
-          {/* Tafsir Modal Trigger */}
           <button
             onClick={onOpenTafsir}
-            className="p-2 text-[var(--gold2)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/10 active:scale-90 transition-all rounded-xl cursor-pointer"
-            title="التفسير الميسر / Tafsir"
+            className="hidden xs:flex w-8 h-8 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] items-center justify-center text-[var(--text2)] hover:text-[var(--gold2)] cursor-pointer"
+            title="تفسير الآية"
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-3.5 h-3.5" />
           </button>
 
-          {/* Close Player */}
+          <button
+            onClick={() => setIsMuted((m) => !m)}
+            className="hidden md:flex w-8 h-8 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] items-center justify-center text-[var(--text2)] hover:text-[var(--gold2)] cursor-pointer"
+            title={isMuted ? 'إلغاء الكتم' : 'كتم'}
+          >
+            {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          </button>
+
           <button
             onClick={onClose}
-            className="p-2 text-[var(--text3)] hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all rounded-xl cursor-pointer"
-            title="إغلاق المشغل / Close Audio Player"
+            className="w-8 h-8 rounded-lg bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center text-[var(--text3)] hover:text-red-400 cursor-pointer"
+            title="إغلاق المشغل"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

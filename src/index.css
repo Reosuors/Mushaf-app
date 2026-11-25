@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #080808;
-  --bg2: #111111;
-  --bg3: #181818;
-  --bg4: #1f1f1f;
-  --gold: #c9a84c;
-  --gold2: #e8cc7a;
-  --gold3: #f5e4a8;
-  --text: #f0e8d8;
-  --text2: #9a8868;
-  --text3: #4a4030;
-  --border: #1e1a10;
-  --border2: #2a2416;
-  --green: #2e7d4f;
-  --green2: #3da366;
-  --radius: 14px;
-  --nav-h: 64px;
+  --bg: #0B0E0D;
+  --bg2: #111614;
+  --bg3: #171E1B;
+  --bg4: #1F2925;
+  --gold: #D4AF37;
+  --gold2: #E6C875;
+  --gold3: #F6E8BE;
+  --text: #F4EFE6;
+  --text2: #B2A896;
+  --text3: #726A5C;
+  --border: #1D2622;
+  --border2: #2B3530;
+  --green: #2E8B57;
+  --green2: #45B878;
+  --radius: 18px;
+  --nav-h: 66px;
 }
 
 * {
@@ -405,8 +405,22 @@ body { background-color: var(--bg); color: var(--text); transition: background-c
 .pattern-leaves { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2790%27%20height%3D%2790%27%20viewBox%3D%270%200%2090%2090%27%3E%3Cg%20fill%3D%27%235fd39a%27%20fill-opacity%3D%270.06%27%3E%3Cpath%20d%3D%27M20%2010c18%202%2026%2014%2024%2030C28%2038%2018%2028%2020%2010z%27/%3E%3Cpath%20d%3D%27M70%2050c-18%202-26%2014-24%2030%2016-2%2026-12%2024-30z%27/%3E%3C/g%3E%3C/svg%3E"); }
 .pattern-paper { background-image: radial-gradient(circle at 20% 10%, rgba(154,107,18,0.06), transparent 40%), radial-gradient(circle at 85% 80%, rgba(154,107,18,0.07), transparent 45%); }
 
-/* Original (dark gold): same colours, cleaner cards */
-body.theme-dark-gold .bg-\[var\(--bg2\)\].border, .bg-gradient-to-br.border, .bg-\[var\(--bg2\)\]\/95 { box-shadow: 0 1px 0 rgba(212,175,55,0.06) inset, 0 6px 18px rgba(0,0,0,0.35); }
+/* Signature Illuminated Obsidian-Emerald Velvet & Antique Gold (default) */
+body.theme-dark-gold {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(75% 42% at 50% 0%, rgba(212, 175, 55, 0.08), transparent 68%),
+    radial-gradient(60% 50% at 85% 100%, rgba(46, 139, 87, 0.06), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-opacity='0.032' stroke-width='0.9'%3E%3Crect x='26' y='26' width='44' height='44'/%3E%3Crect x='26' y='26' width='44' height='44' transform='rotate(45 48 48)'/%3E%3Ccircle cx='48' cy='48' r='12'/%3E%3C/g%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+body.theme-dark-gold .bg-\[var\(--bg2\)\].border,
+body.theme-dark-gold .bg-gradient-to-br.border,
+body.theme-dark-gold .bg-\[var\(--bg2\)\]\/95 {
+  box-shadow:
+    0 1px 0 rgba(230, 200, 117, 0.06) inset,
+    0 10px 28px -12px rgba(0, 0, 0, 0.65);
+}
 
 /* Classic mushaf: paper, double gold frame, square corners, Amiri headings */
 body.theme-classic-mushaf :is(.bg-\[var\(--bg\)\], body) { background-image: radial-gradient(circle at 20% 10%, rgba(154,107,18,0.06), transparent 40%), radial-gradient(circle at 85% 80%, rgba(154,107,18,0.07), transparent 45%); }
@@ -453,20 +467,61 @@ body.theme-desert-sand :is(h2, h3, h4) { font-family: 'Noto Naskh Arabic', serif
 body.theme-light :is(.text-black) { color: #fff !important; }
 body.theme-light .text-\[var\(--gold\)\] { color: var(--gold); }
 
-/* --- Main design (الأساسي) polish — same dark-gold palette, only structure/spacing/type --- */
-[data-design-style="modern"] header { box-shadow: 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent), 0 8px 24px -16px rgba(0,0,0,.8); }
-[data-design-style="modern"] main > * { animation: fadeIn .28s ease-out; }
-[data-design-style="modern"] .surah-card { background: linear-gradient(150deg, var(--bg2) 0%, var(--bg3) 140%); border-radius: 1.15rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 8px 20px -14px rgba(0,0,0,.75); padding: 0.85rem 0.95rem; }
-[data-design-style="modern"] .surah-card:hover, [data-design-style="modern"] .surah-card:active { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
-[data-design-style="modern"] .surah-num { border-radius: 0.6rem; transform: rotate(45deg); width: 2.15rem; height: 2.15rem; margin-inline: 0.35rem;
-  border-color: color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--gold) 8%, var(--bg3)); }
-[data-design-style="modern"] .surah-num > span { transform: rotate(-45deg); font-family: 'Amiri', serif; font-size: 0.85rem; }
-[data-design-style="modern"] [data-surah-list] { gap: 0.6rem; }
-[data-design-style="modern"] .verse-card { border-radius: 1.3rem; padding: 1.1rem 1.15rem 1.25rem;
-  background: linear-gradient(170deg, var(--bg2), color-mix(in srgb, var(--bg3) 70%, var(--bg2))); box-shadow: 0 10px 26px -18px rgba(0,0,0,.85); }
-[data-design-style="modern"] .verse-num { border-radius: 999px; width: 2rem; height: 2rem; font-family: 'Amiri', serif; font-size: 0.85rem;
-  border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--gold) 16%, var(--bg3)), var(--bg3)); }
-[data-design-style="modern"] .bottom-nav { border-top-color: color-mix(in srgb, var(--gold) 18%, transparent) !important; }
-[data-design-style="modern"] .font-amiri { letter-spacing: .01em; }
+/* --- Signature Illuminated Manuscript Utilities & Main Design (الأساسي) --- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+.manuscript-sheet {
+  position: relative;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg2) 96%, var(--gold) 4%), var(--bg2) 22%, var(--bg2) 82%, color-mix(in srgb, var(--bg2) 97%, var(--gold) 3%));
+  border: 1px solid color-mix(in srgb, var(--gold) 32%, var(--border2));
+  box-shadow:
+    inset 0 0 0 5px var(--bg2),
+    inset 0 0 0 6px color-mix(in srgb, var(--gold) 18%, transparent),
+    0 20px 50px -24px rgba(0, 0, 0, 0.85);
+}
+
+.gold-hairline {
+  border-color: color-mix(in srgb, var(--gold) 24%, var(--border2));
+}
+
+@keyframes pearlPulse {
+  0% { transform: scale(0.95); opacity: 0.55; }
+  100% { transform: scale(1.22); opacity: 0; }
+}
+.animate-pearl-pulse {
+  animation: pearlPulse 0.65s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-design-style="modern"] header {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--gold) 18%, transparent), 0 10px 28px -18px rgba(0, 0, 0, 0.85);
+}
+[data-design-style="modern"] main > * { animation: fadeIn 0.28s ease-out; }
+[data-design-style="modern"] .surah-card {
+  background: linear-gradient(155deg, color-mix(in srgb, var(--bg2) 96%, var(--gold) 4%) 0%, var(--bg2) 55%, color-mix(in srgb, var(--bg3) 75%, var(--bg2)) 100%);
+  border-radius: 1.15rem;
+  box-shadow: inset 0 1px 0 rgba(230, 200, 117, 0.05), 0 10px 24px -16px rgba(0, 0, 0, 0.78);
+}
+[data-design-style="modern"] .surah-card:hover,
+[data-design-style="modern"] .surah-card:active {
+  border-color: color-mix(in srgb, var(--gold) 55%, transparent);
+  box-shadow: inset 0 1px 0 rgba(230, 200, 117, 0.09), 0 12px 28px -14px rgba(212, 175, 55, 0.16);
+}
+[data-design-style="modern"] [data-surah-list] { gap: 0.65rem; }
+[data-design-style="modern"] .verse-card {
+  border-radius: 1.35rem;
+  background: linear-gradient(175deg, var(--bg2), color-mix(in srgb, var(--bg3) 55%, var(--bg2)));
+  box-shadow: inset 0 1px 0 rgba(230, 200, 117, 0.04), 0 12px 28px -18px rgba(0, 0, 0, 0.85);
+}
+[data-design-style="modern"] .bottom-nav {
+  border-top-color: color-mix(in srgb, var(--gold) 20%, transparent) !important;
+}
+[data-design-style="modern"] .font-amiri { letter-spacing: 0.01em; }

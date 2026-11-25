@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Section, DesignStyleId } from '../types';
 import { TRANSLATIONS } from '../data/translations';
-import { Palette, Globe, ChevronDown, Check, Search, HardDrive, Menu } from 'lucide-react';
+import { Palette, ChevronDown, Check, Search, HardDrive, Menu } from 'lucide-react';
+import { MushafLogoEmblem, SectionIcon } from './IslamicOrnaments';
+import { hapticFeedback } from '../utils/haptics';
 
 interface TopBarProps {
   lang: string;
@@ -26,22 +28,23 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenDrawerMenu,
   onLogoClick,
 }) => {
-  const [hijriDate, setHijriDate] = useState<string>('—');
+  const [hijriDate, setHijriDate] = useState<string>('');
   const [langOpen, setLangOpen] = useState(false);
   const [langSearch, setLangSearch] = useState('');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const langRef = useRef<HTMLDivElement>(null);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
-  const isRtl = lang === 'ar' || lang === 'ur';
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
 
-  const navItems: { id: Section; label: string; icon: string }[] = [
-    { id: 'prayer', label: t.navPrayer || 'الصلاة', icon: '🕌' },
-    { id: 'quran', label: t.navQuran || 'القرآن', icon: '📖' },
-    { id: 'azkar', label: t.navAzkar || 'الأذكار', icon: '🤲' },
-    { id: 'tasbih', label: t.navTasbih || 'التسبيح', icon: '📿' },
-    { id: 'asma', label: t.navAsma || 'الأسماء', icon: '☪️' },
-    { id: 'support', label: t.navSupport || 'ادعمنا', icon: '💛' },
+  const navItems: { id: Section; label: string }[] = [
+    { id: 'quran', label: t.navQuran || 'القرآن' },
+    { id: 'prayer', label: t.navPrayer || 'الصلاة' },
+    { id: 'azkar', label: t.navAzkar || 'الأذكار' },
+    { id: 'tasbih', label: t.navTasbih || 'التسبيح' },
+    { id: 'asma', label: t.navAsma || 'الأسماء' },
+    { id: 'ruqyah', label: isRtl ? 'الرقية' : 'Ruqyah' },
+    { id: 'support', label: t.navSupport || 'ادعمنا' },
   ];
 
   useEffect(() => {
@@ -93,124 +96,145 @@ export const TopBar: React.FC<TopBarProps> = ({
     flag: d.flag || '🌐',
   }));
 
-  const filteredLangs = languageList.filter((l) =>
-    l.name.toLowerCase().includes(langSearch.toLowerCase()) ||
-    l.code.toLowerCase().includes(langSearch.toLowerCase())
+  const filteredLangs = languageList.filter(
+    (l) =>
+      l.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+      l.code.toLowerCase().includes(langSearch.toLowerCase())
   );
 
   return (
-    <header className="h-[54px] bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--border2)] flex items-center justify-between px-3 sm:px-5 shrink-0 relative z-50 transition-colors">
-      {/* Corner: Hamburger 3-line Menu Button + App Logo */}
-      <div className="flex items-center gap-2">
+    <header className="h-[58px] bg-[var(--bg)]/88 backdrop-blur-xl border-b border-[var(--gold)]/18 flex items-center justify-between px-3 sm:px-5 shrink-0 relative z-50 transition-colors">
+      {/* Subtle top-edge golden filament */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px]"
+        style={{
+          background:
+            'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--gold) 32%, transparent) 50%, transparent 100%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Start: Menu Trigger + Calligraphic Mushaf Brand Lockup */}
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         {onOpenDrawerMenu && (
           <button
             id="topbar-drawer-menu-btn"
-            onClick={onOpenDrawerMenu}
-            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 ${
-              (currentDesignStyle === 'drawer' || currentDesignStyle === 'minimal')
-                ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black font-extrabold ring-2 ring-[var(--gold)]/50 shadow-md'
-                : 'bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] hover:border-[var(--gold)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/10'
+            onClick={() => {
+              hapticFeedback.tap();
+              onOpenDrawerMenu();
+            }}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
+              currentDesignStyle === 'drawer' || currentDesignStyle === 'minimal'
+                ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-black shadow-md'
+                : 'bg-[var(--bg2)] border border-[var(--border2)] text-[var(--text2)] hover:border-[var(--gold)]/60 hover:text-[var(--gold2)]'
             }`}
-            title={isRtl ? 'القائمة الرئيسية (3 خطوط ☰)' : 'Main Menu (☰)'}
+            title={isRtl ? 'القائمة الرئيسية' : 'Main Menu'}
             aria-label="Open Navigation Menu"
           >
-            <Menu className="w-5 h-5 stroke-[2.5]" />
+            <Menu className="w-[18px] h-[18px] stroke-[2.2]" />
           </button>
         )}
 
         <button
           id="app-logo-btn"
           onClick={onLogoClick}
-          className="font-amiri text-2xl font-bold text-[var(--gold)] hover:text-[var(--gold2)] transition-colors cursor-pointer tracking-wide flex items-center gap-1.5"
+          className="group flex items-center gap-2 cursor-pointer py-1 shrink-0"
         >
-          <span>{t.logo || 'مصحف'}</span>
+          <MushafLogoEmblem className="w-7 h-7 transition-transform duration-300 group-hover:rotate-12" />
+          <div className="flex flex-col items-start leading-none">
+            <span className="font-amiri text-[1.4rem] font-bold text-[var(--gold2)] group-hover:text-[var(--gold3)] transition-colors tracking-wide">
+              {t.logo || 'مصحف'}
+            </span>
+          </div>
         </button>
 
-        {/* Connectivity status indicator */}
-        <div
-          title={isOnline ? (isRtl ? 'متصل بالإنترنت' : 'Online') : (isRtl ? 'وضع عدم الاتصال (Offline)' : 'Offline mode')}
-          className={`flex items-center gap-1 text-[0.65rem] px-2 py-0.5 rounded-full border transition-all ${
-            isOnline
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-              : 'bg-amber-500/15 border-amber-500/40 text-amber-500 animate-pulse'
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          <span className="hidden sm:inline font-sans font-semibold">
-            {isOnline ? 'Online' : 'Offline'}
-          </span>
-        </div>
+        {!isOnline && (
+          <div
+            title={isRtl ? 'وضع عدم الاتصال' : 'Offline mode'}
+            className="flex items-center gap-1 text-[0.64rem] px-2 py-0.5 rounded-full bg-amber-500/12 border border-amber-500/30 text-amber-400 font-semibold shrink-0"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="hidden xs:inline">{isRtl ? 'أوفلاين' : 'Offline'}</span>
+          </div>
+        )}
       </div>
 
-      {/* Center Quick Section Switcher on medium+ screens */}
+      {/* Center: Architectural Desktop Navigation Pill */}
       {onSelectSection && (
-        <div className="hidden md:flex items-center gap-1 bg-[var(--bg3)]/80 p-1 rounded-2xl border border-[var(--border2)]">
+        <nav
+          aria-label="Desktop Navigation"
+          className="hidden lg:flex items-center gap-0.5 bg-[var(--bg2)]/90 px-1.5 py-1 rounded-full border border-[var(--border2)] shadow-inner"
+        >
           {navItems.map((item) => {
             const isActive = currentSection === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => onSelectSection(item.id)}
-                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                onClick={() => {
+                  hapticFeedback.navigation();
+                  onSelectSection(item.id);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-sm font-extrabold'
-                    : 'text-[var(--text2)] hover:text-[var(--gold)] hover:bg-[var(--bg4)]'
+                    ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-[0_2px_12px_rgba(212,175,55,0.35)]'
+                    : 'text-[var(--text2)] hover:text-[var(--gold2)] hover:bg-[var(--bg3)]/70'
                 }`}
               >
-                <span>{item.icon}</span>
+                <SectionIcon id={item.id} active={isActive} className="w-3.5 h-3.5" />
                 <span>{item.label}</span>
               </button>
             );
           })}
-        </div>
+        </nav>
       )}
 
-      {/* Right widgets */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Hijri date badge */}
-        <div
-          id="hijri-date-badge"
-          className="text-[0.7rem] text-[var(--text2)] px-2.5 py-1 bg-[var(--gold)]/5 border border-[var(--border2)] rounded-lg whitespace-nowrap font-medium hidden xs:flex items-center"
-        >
-          {hijriDate}
-        </div>
+      {/* End: Hijri Date + Utility Actions */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {hijriDate && (
+          <div
+            id="hijri-date-badge"
+            className="hidden sm:flex items-center text-[0.7rem] font-amiri font-bold text-[var(--gold2)]/90 px-2.5 py-1 bg-[var(--bg2)] border border-[var(--gold)]/20 rounded-full whitespace-nowrap"
+          >
+            {hijriDate}
+          </div>
+        )}
 
-        {/* Offline Manager button */}
         {onOpenOfflineModal && (
           <button
             id="offline-manager-btn"
             onClick={onOpenOfflineModal}
-            className="w-9 h-9 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold)] hover:border-[var(--gold)] hover:bg-[var(--gold)]/10 transition-all cursor-pointer shadow-sm active:scale-95"
-            title={isRtl ? 'تحميل السور والأوفلاين' : 'Offline Manager'}
+            className="w-9 h-9 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold2)] hover:border-[var(--gold)]/55 transition-all cursor-pointer active:scale-95"
+            title={isRtl ? 'التحميل والأوفلاين' : 'Offline Manager'}
             aria-label="Offline Manager"
           >
             <HardDrive className="w-4 h-4" />
           </button>
         )}
 
-        {/* Theme button */}
         <button
           id="theme-toggle-btn"
           onClick={onOpenThemeModal}
-          className="w-9 h-9 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center text-[var(--text2)] hover:text-[var(--gold)] hover:border-[var(--gold)] hover:bg-[var(--gold)]/10 transition-all cursor-pointer shadow-sm active:scale-95"
-          title="الثيمات / Themes"
+          className="w-9 h-9 rounded-xl bg-[var(--bg2)] border border-[var(--border2)] flex items-center justify-center text-[var(--gold)] hover:text-[var(--gold2)] hover:border-[var(--gold)]/60 hover:bg-[var(--gold)]/10 transition-all cursor-pointer active:scale-95"
+          title={isRtl ? 'المظهر والتصميم والخطوط' : 'Themes & Layouts'}
           aria-label="Change Theme"
         >
           <Palette className="w-4 h-4" />
         </button>
 
-        {/* Language dropdown */}
+        {/* Language selector */}
         <div className="relative" ref={langRef}>
           <button
             id="lang-selector-btn"
             onClick={() => setLangOpen(!langOpen)}
-            className={`flex items-center gap-1.5 bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text2)] px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95 min-h-[34px] hover:border-[var(--gold)] hover:text-[var(--text)] ${
-              langOpen ? 'border-[var(--gold)] text-[var(--gold)] bg-[var(--gold)]/10' : ''
+            className={`flex items-center gap-1 bg-[var(--bg2)] border text-[var(--text2)] px-2.5 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 hover:border-[var(--gold)]/60 hover:text-[var(--text)] ${
+              langOpen
+                ? 'border-[var(--gold)] text-[var(--gold2)] bg-[var(--gold)]/10'
+                : 'border-[var(--border2)]'
             }`}
             aria-label="Select Language"
           >
             <span className="text-sm leading-none">{t.flag}</span>
-            <span className="text-[0.76rem] font-bold">{t.name}</span>
+            <span className="hidden xs:inline text-[0.72rem] font-bold">{t.name}</span>
             <ChevronDown
               className={`w-3.5 h-3.5 transition-transform duration-200 ${
                 langOpen ? 'rotate-180 opacity-90' : 'opacity-60'
@@ -219,20 +243,18 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
 
           {langOpen && (
-            <div className="absolute top-[calc(100%+8px)] start-0 sm:start-auto sm:end-0 bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl w-56 max-h-80 shadow-2xl z-[200] overflow-hidden flex flex-col animate-drop-in">
-              {/* Search box inside language menu */}
+            <div className="absolute top-[calc(100%+8px)] end-0 bg-[var(--bg2)] border border-[var(--gold)]/30 rounded-2xl w-56 max-h-80 shadow-2xl z-[200] overflow-hidden flex flex-col animate-drop-in">
               <div className="p-2 border-b border-[var(--border2)] bg-[var(--bg2)] sticky top-0 z-10 flex items-center gap-1.5">
                 <Search className="w-3.5 h-3.5 text-[var(--text3)]" />
                 <input
                   type="text"
-                  placeholder="Search / بحث..."
+                  placeholder={isRtl ? 'بحث عن لغة...' : 'Search language...'}
                   value={langSearch}
                   onChange={(e) => setLangSearch(e.target.value)}
-                  className="w-full bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] text-xs rounded-lg px-2 py-1 outline-none focus:border-[var(--gold)]"
+                  className="w-full bg-[var(--bg3)] border border-[var(--border2)] text-[var(--text)] text-xs rounded-lg px-2 py-1.5 outline-none focus:border-[var(--gold)]"
                 />
               </div>
 
-              {/* Language item list */}
               <div className="overflow-y-auto flex-1 p-1 space-y-0.5">
                 {filteredLangs.map((item) => {
                   const isSelected = item.code === lang;
@@ -243,9 +265,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                         onSelectLang(item.code);
                         setLangOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-[var(--gold)]/15 text-[var(--gold)] font-bold'
+                          ? 'bg-[var(--gold)]/15 text-[var(--gold2)] font-bold'
                           : 'text-[var(--text2)] hover:bg-[var(--bg3)] hover:text-[var(--text)]'
                       }`}
                     >

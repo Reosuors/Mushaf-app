@@ -1,65 +1,99 @@
 import React from 'react';
-import { QURAN_EDITION } from '../utils/quranText';
-import { RECITERS } from '../utils/quranAudio';
+import { BookOpen, Volume2, Type, ShieldCheck } from 'lucide-react';
+import { MihrabBackdrop, MushafLogoEmblem, GoldDivider } from './IslamicOrnaments';
 
-const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section className="bg-[var(--bg2)] border border-[var(--border2)] rounded-2xl p-4 space-y-2">
-    <h3 className="text-sm font-bold text-[var(--gold2)]">{title}</h3>
-    <div className="text-[0.8rem] leading-relaxed text-[var(--text2)] space-y-1.5">{children}</div>
-  </section>
-);
+interface AboutSectionProps {
+  lang: string;
+}
 
-const A: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
-  <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--gold)] underline underline-offset-2 break-all">
-    {children}
-  </a>
-);
+export const AboutSection: React.FC<AboutSectionProps> = ({ lang }) => {
+  const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
+  const version = import.meta.env.VITE_APP_VERSION || '1.1.0';
 
-export const AboutSection: React.FC<{ lang: string }> = () => (
-  <div className="max-w-2xl mx-auto p-4 pb-28 space-y-3 animate-fade-in" dir="rtl">
-    <h2 className="text-lg font-bold text-[var(--gold2)] text-center font-amiri">عن التطبيق والمصادر</h2>
+  const credits = [
+    {
+      icon: BookOpen,
+      title: isRtl ? 'النص القرآني' : 'Quran Text',
+      body: isRtl
+        ? 'نص القرآن الكريم بالرسم العثماني منقول حرفياً دون أي تعديل من مشروع Tanzil.net (الإصدار 1.1) بترخيص CC BY 3.0.'
+        : 'Verbatim Uthmani Quran text from Tanzil.net (v1.1), licensed under CC BY 3.0.',
+      link: 'https://tanzil.net',
+    },
+    {
+      icon: Volume2,
+      title: isRtl ? 'التلاوات الصوتية' : 'Audio Recitations',
+      body: isRtl
+        ? 'تلاوات آية بآية لـ ٢٥ قارئاً من مشروع EveryAyah و MP3Quran.'
+        : 'Verse-by-verse audio recitations by 25 reciters via EveryAyah & MP3Quran.',
+      link: 'https://everyayah.com',
+    },
+    {
+      icon: Type,
+      title: isRtl ? 'الخطوط القرآنية' : 'Arabic Typography',
+      body: isRtl
+        ? 'خطوط Amiri Quran و Scheherazade New و Noto Naskh Arabic و Reem Kufi و Cairo.'
+        : 'Amiri Quran, Scheherazade New, Noto Naskh Arabic, Reem Kufi & Cairo.',
+    },
+    {
+      icon: ShieldCheck,
+      title: isRtl ? 'الخصوصية والوقف' : 'Privacy & Ad-Free',
+      body: isRtl
+        ? 'تطبيق مجاني بالكامل وخالٍ من الإعلانات والتتبع، يعمل بدون إنترنت ويحفظ علاماتك محلياً على جهازك.'
+        : '100% free, ad-free, offline-capable, and privacy-respecting.',
+    },
+  ];
 
-    <Card title="نص القرآن الكريم">
-      <p>
-        نص المصحف بالرسم العثماني من مشروع تنزيل (Tanzil Quran Text — Uthmani, Version 1.1)، حقوق النشر © 2007-2026 Tanzil Project،
-        بترخيص المشاع الإبداعي (CC BY 3.0). النص منسوخ حرفياً بدون أي تعديل، ومحفوظ داخل التطبيق ليعمل بدون إنترنت.
-      </p>
-      <p>
-        المصدر وتحديثات النص: <A href="https://tanzil.net">tanzil.net</A>
-      </p>
-      <p className="text-[var(--text3)]">النسخة المستعملة: {QURAN_EDITION}. أرقام الأجزاء والأحزاب والصفحات من بيانات تنزيل (Tanzil Quran Metadata، CC BY 3.0).</p>
-    </Card>
+  return (
+    <div className="max-w-2xl mx-auto p-3.5 sm:p-6 pb-28 space-y-4 animate-fade-in">
+      <div className="relative rounded-[26px] overflow-hidden border border-[var(--gold)]/32 bg-gradient-to-b from-[var(--bg3)]/95 via-[var(--bg2)] to-[var(--bg2)] p-6 text-center shadow-lg">
+        <MihrabBackdrop className="opacity-75" />
+        <div className="relative z-10 flex flex-col items-center">
+          <MushafLogoEmblem className="w-12 h-12 mb-3" />
+          <h2 className="font-amiri text-3xl font-bold text-[var(--gold2)]">
+            {isRtl ? 'مصحف' : 'Mushaf'}
+          </h2>
+          <span className="mt-1.5 text-[0.7rem] px-3 py-0.5 rounded-full bg-[var(--gold)]/12 border border-[var(--gold)]/30 text-[var(--gold2)] font-bold tabular-nums">
+            v{version}
+          </span>
+          <GoldDivider className="w-32 my-3 opacity-60" />
+          <p className="text-xs sm:text-sm text-[var(--text2)] max-w-md leading-relaxed">
+            {isRtl
+              ? 'القرآن الكريم بالرسم العثماني مع التلاوة والتفسير ومواقيت الصلاة والأذكار والرقية الشرعية.'
+              : 'The Noble Quran in Uthmani script with recitation, tafsir, prayer times, adhkar & ruqyah.'}
+          </p>
+        </div>
+      </div>
 
-    <Card title="التفسير والترجمات">
-      <p>
-        التفسير الميسر والتفاسير والترجمات الأخرى تأتي من خدمة <A href="https://alquran.cloud">alquran.cloud</A> (Islamic Network) عند فتح التفسير.
-      </p>
-    </Card>
-
-    <Card title="التلاوات الصوتية">
-      <p>
-        تلاوة السورة كاملة من <A href="https://mp3quran.net">mp3quran.net</A>، والتلاوة آية بآية من <A href="https://everyayah.com">everyayah.com</A>
-        — بنفس صوت القارئ اللي بتختاره. القرّاء: {RECITERS.map((r) => r.name).join('، ')}.
-      </p>
-    </Card>
-
-    <Card title="مواقيت الصلاة">
-      <p>
-        مواقيت الصلاة من <A href="https://aladhan.com">aladhan.com</A>، مع حساب محلي احتياطي عند انقطاع الإنترنت.
-      </p>
-    </Card>
-
-    <Card title="الخطوط">
-      <p>
-        خطوط Amiri Quran وAmiri وScheherazade New وNoto Naskh Arabic وReem Kufi وCairo من <A href="https://fonts.google.com">Google Fonts</A>
-        بترخيص SIL Open Font License.
-      </p>
-    </Card>
-
-    <Card title="تنبيه">
-      <p>
-        هذا التطبيق مشروع شخصي. إذا لاحظت أي خطأ بالنص أو بالتلاوة، يرجى المراجعة مع مصحف مطبوع والإبلاغ عنه.
-      </p>
-    </Card>
-  </div>
-);
+      <div className="space-y-2.5">
+        {credits.map((c, idx) => {
+          const Icon = c.icon;
+          return (
+            <div
+              key={idx}
+              className="bg-[var(--bg2)] border border-[var(--border2)] rounded-[20px] p-4 flex items-start gap-3"
+            >
+              <div className="w-9 h-9 rounded-xl bg-[var(--gold)]/12 border border-[var(--gold)]/28 flex items-center justify-center text-[var(--gold)] shrink-0">
+                <Icon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-amiri text-base font-bold text-[var(--gold2)]">{c.title}</h3>
+                <p className="text-xs text-[var(--text2)] mt-1 leading-relaxed">{c.body}</p>
+                {c.link && (
+                  <a
+                    href={c.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-[0.7rem] text-[var(--gold)] hover:underline mt-1 font-semibold"
+                    dir="ltr"
+                  >
+                    {c.link}
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

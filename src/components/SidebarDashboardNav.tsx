@@ -1,18 +1,9 @@
 import React from 'react';
 import { Section } from '../types';
 import { TRANSLATIONS } from '../data/translations';
-import {
-  BookOpen,
-  Clock,
-  HeartHandshake,
-  Sparkles,
-  Layers,
-  Crown,
-  HardDrive,
-  Palette,
-  Search,
-  Check,
-} from 'lucide-react';
+import { HardDrive, Palette, Search } from 'lucide-react';
+import { MushafLogoEmblem, SectionIcon, GoldDivider } from './IslamicOrnaments';
+import { hapticFeedback } from '../utils/haptics';
 
 interface SidebarDashboardNavProps {
   currentSection: Section;
@@ -36,102 +27,91 @@ export const SidebarDashboardNav: React.FC<SidebarDashboardNavProps> = ({
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ar;
   const isRtl = lang === 'ar' || lang === 'ur' || lang === 'fa';
 
-  const navItems: { id: Section; label: string; icon: string; desc: string }[] = [
-    { id: 'quran', label: t.navQuran || 'القرآن الكريم', icon: '📖', desc: 'تلاوة، تفسير وترجمات' },
-    { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', icon: '🕌', desc: 'الأذان والقبلة' },
-    { id: 'azkar', label: t.navAzkar || 'حصن المسلم', icon: '🤲', desc: 'أذكار الصباح والمساء' },
-    { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', icon: '📿', desc: 'عداد الأذكار والاستغفار' },
-    { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', icon: '☪️', desc: 'شرح وتدبر الأسماء' },
-    { id: 'support', label: t.navSupport || 'ادعم التطبيق', icon: '💛', desc: 'شاركنا الأجر' },
+  const navItems: { id: Section; label: string; desc: string }[] = [
+    { id: 'quran', label: t.navQuran || 'القرآن الكريم', desc: isRtl ? 'تلاوة، تفسير وترجمات' : 'Read & listen' },
+    { id: 'prayer', label: t.navPrayer || 'مواقيت الصلاة', desc: isRtl ? 'الأذان والقبلة' : 'Prayer & Qibla' },
+    { id: 'ruqyah', label: isRtl ? 'الرقية الشرعية' : 'Ruqyah', desc: isRtl ? 'آيات وأدعية' : 'Verses & duas' },
+    { id: 'azkar', label: t.navAzkar || 'حصن المسلم', desc: isRtl ? 'أذكار الصباح والمساء' : 'Daily adhkar' },
+    { id: 'tasbih', label: t.navTasbih || 'المسبحة الإلكترونية', desc: isRtl ? 'عداد الاستغفار' : 'Tasbih counter' },
+    { id: 'asma', label: t.navAsma || 'أسماء الله الحسنى', desc: isRtl ? 'التدبر والمعاني' : '99 Names' },
+    { id: 'support', label: t.navSupport || 'ادعم التطبيق', desc: isRtl ? 'شاركنا الأجر' : 'Support Mushaf' },
   ];
 
   return (
-    <aside className="w-64 lg:w-72 bg-[var(--bg2)] border-e border-[var(--border2)] flex flex-col shrink-0 h-full select-none z-30 transition-all shadow-xl">
-      {/* Brand Header */}
+    <aside className="w-64 lg:w-72 bg-[var(--bg2)] border-e border-[var(--gold)]/20 flex flex-col shrink-0 h-full select-none z-30 transition-all shadow-xl">
       <div className="p-4 border-b border-[var(--border2)] flex items-center justify-between">
-        <button
-          onClick={onLogoClick}
-          className="font-amiri text-2xl font-bold text-[var(--gold)] hover:text-[var(--gold2)] flex items-center gap-2 cursor-pointer transition-colors"
-        >
-          <span>🕌</span>
-          <span>{t.logo || 'المصحف الشريف'}</span>
+        <button onClick={onLogoClick} className="flex items-center gap-2.5 cursor-pointer group">
+          <MushafLogoEmblem className="w-8 h-8 transition-transform group-hover:rotate-12" />
+          <div className="text-start">
+            <div className="font-amiri text-xl font-bold text-[var(--gold2)] leading-none">
+              {t.logo || 'مصحف'}
+            </div>
+            <div className="text-[0.62rem] text-[var(--text3)] mt-0.5">
+              {isRtl ? 'القرآن الكريم' : 'Noble Quran'}
+            </div>
+          </div>
         </button>
 
-        <span className="text-[0.62rem] font-bold text-[var(--gold)] bg-[var(--gold)]/10 px-2 py-0.5 rounded-md border border-[var(--gold)]/30">
-          PRO
-        </span>
-      </div>
-
-      {/* Quick Search Shortcut */}
-      <div className="p-3">
         <button
           onClick={onOpenGlobalSearch}
-          className="w-full bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] hover:text-[var(--text)] px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs"
+          className="w-8 h-8 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] flex items-center justify-center text-[var(--gold)] hover:border-[var(--gold)]/60 cursor-pointer"
+          title={isRtl ? 'بحث في الآيات' : 'Search'}
         >
-          <div className="flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-[var(--gold)]" />
-            <span>{isRtl ? 'بحث في القرآن والسور...' : 'Search Quran...'}</span>
-          </div>
-          <kbd className="text-[0.6rem] bg-[var(--bg)] px-1.5 py-0.5 rounded border border-[var(--border2)] text-[var(--text3)]">
-            Ctrl+K
-          </kbd>
+          <Search className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
-        <div className="text-[0.65rem] font-bold text-[var(--gold)] uppercase px-3 py-1">
-          {isRtl ? 'الأقسام الرئيسية' : 'Main Sections'}
-        </div>
-
         {navItems.map((item) => {
           const isActive = currentSection === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => onSelectSection(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer text-start ${
+              onClick={() => {
+                hapticFeedback.navigation();
+                onSelectSection(item.id);
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all cursor-pointer text-start ${
                 isActive
-                  ? 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold2)] text-black shadow-md font-extrabold scale-[1.02]'
-                  : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--bg3)]'
+                  ? 'bg-[var(--gold)]/14 border border-[var(--gold)]/40 text-[var(--gold2)]'
+                  : 'border border-transparent text-[var(--text2)] hover:bg-[var(--bg3)] hover:text-[var(--text)]'
               }`}
             >
-              <span className="text-lg leading-none">{item.icon}</span>
-              <div className="flex-1 min-w-0">
-                <span className="block truncate">{item.label}</span>
-                <span
-                  className={`block text-[0.62rem] truncate ${
-                    isActive ? 'text-black/75' : 'text-[var(--text3)]'
-                  }`}
-                >
-                  {item.desc}
-                </span>
+              <span
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isActive
+                    ? 'bg-[var(--gold)] text-black'
+                    : 'bg-[var(--bg3)] text-[var(--gold)]'
+                }`}
+              >
+                <SectionIcon id={item.id} active={isActive} className="w-4 h-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-bold truncate">{item.label}</div>
+                <div className="text-[0.62rem] text-[var(--text3)] truncate">{item.desc}</div>
               </div>
-              {isActive && <Check className="w-4 h-4 text-black shrink-0" />}
             </button>
           );
         })}
       </div>
 
-      {/* Bottom Utility Tools */}
-      <div className="p-3 border-t border-[var(--border2)] bg-[var(--bg)]/40 space-y-1.5">
-        <div className="grid grid-cols-2 gap-1.5">
-          <button
-            onClick={onOpenThemeModal}
-            className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] text-xs font-semibold cursor-pointer transition-all"
-          >
-            <Palette className="w-3.5 h-3.5 text-[var(--gold)]" />
-            <span>{isRtl ? 'المظهر' : 'Themes'}</span>
-          </button>
+      <GoldDivider className="px-4 opacity-50" />
 
-          <button
-            onClick={onOpenOfflineModal}
-            className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-[var(--bg3)] hover:bg-[var(--bg4)] border border-[var(--border2)] hover:border-[var(--gold)] text-[var(--text2)] text-xs font-semibold cursor-pointer transition-all"
-          >
-            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isRtl ? 'الأوفلاين' : 'Offline'}</span>
-          </button>
-        </div>
+      <div className="p-3 grid grid-cols-2 gap-2">
+        <button
+          onClick={onOpenThemeModal}
+          className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] hover:border-[var(--gold)]/50 text-xs font-bold text-[var(--gold2)] cursor-pointer"
+        >
+          <Palette className="w-3.5 h-3.5" />
+          <span>{isRtl ? 'المظهر' : 'Theme'}</span>
+        </button>
+        <button
+          onClick={onOpenOfflineModal}
+          className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--bg3)] border border-[var(--border2)] hover:border-[var(--gold)]/50 text-xs font-bold text-[var(--text2)] cursor-pointer"
+        >
+          <HardDrive className="w-3.5 h-3.5 text-[var(--gold)]" />
+          <span>{isRtl ? 'أوفلاين' : 'Offline'}</span>
+        </button>
       </div>
     </aside>
   );
